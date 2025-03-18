@@ -1,0 +1,7 @@
+[
+    { "id": 1, "dosen_id": 1, "hari": "Senin", "jam": "10:00 - 12:00", "kuota": 5 },
+    { "id": 2, "dosen_id": 1, "hari": "Rabu", "jam": "13:00 - 15:00", "kuota": 3 },
+    { "id": 3, "dosen_id": 2, "hari": "Selasa", "jam": "09:00 - 11:00", "kuota": 4 },
+    { "id": 4, "dosen_id": 2, "hari": "Kamis", "jam": "14:00 - 16:00", "kuota": 2 }
+  ]
+  

@@ -1,0 +1,27 @@
+[
+    { "id": 1, "name": "Form Perubahan KRS" },
+    { "id": 2, "name": "Form Perubahan Nilai Prodi" },
+    { "id": 3, "name": "Form Penampilan Mata Kuliah" },
+    { "id": 4, "name": "Form Penghapusan/Hide Mata Kuliah" },
+    { "id": 5, "name": "Form Permohonan Cuti Akademik" },
+    { "id": 6, "name": "Form Pengunduran Diri FTI" },
+    { "id": 7, "name": "Form Pengunduran Diri – Mahasiswa TPB" },
+    { "id": 8, "name": "Form Surat Rekomendasi Mahasiswa" },
+    { "id": 9, "name": "Form Permohonan Pengisian KRS" },
+    { "id": 10, "name": "Form Dispensasi Mahasiswa" },
+    { "id": 11, "name": "Form Rekomendasi Mahasiswa" },
+    { "id": 12, "name": "Form Peminjaman Alat Laboratorium (Dalam Fakultas)" },
+    { "id": 13, "name": "Form Izin Penelitian dan Penggunaan Alat Laboratorium Lintas Fakultas (dari FTI ke Fakultas lain, Peminjaman Berkelompok)" },
+    { "id": 14, "name": "Form Izin Penelitian dan Penggunaan Laboratorium MM/TIK" },
+    { "id": 15, "name": "Surat Izin Kegiatan Senin-Jumat HIMA" },
+    { "id": 16, "name": "Surat Izin Kegiatan Sabtu & Minggu HIMA" },
+    { "id": 17, "name": "Surat Izin Peminjaman Ruang Kelas" },
+    { "id": 18, "name": "Surat Izin Kegiatan UKM Senin-Jumat" },
+    { "id": 19, "name": "Surat Izin Kegiatan Sabtu & Minggu UKM" },
+    { "id": 20, "name": "Format Teknis Lapangan Kegiatan Mahasiswa" },
+    { "id": 21, "name": "Layanan Perubahan KRS" },
+    { "id": 22, "name": "Layanan Pengisian KRS" },
+    { "id": 23, "name": "Layanan Penyembunyian Matakuliah" },
+    { "id": 24, "name": "Layanan Tampil Matakuliah" }
+  ]
+  
