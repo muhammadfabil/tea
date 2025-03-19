@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-const StatusPelayanan = () => {
+const KelolaAdministrasi = () => {
   const [requests, setRequests] = useState([]);
 
   useEffect(() => {
@@ -8,19 +8,17 @@ const StatusPelayanan = () => {
     setRequests(storedRequests);
   }, []);
 
-  // Fungsi untuk membatalkan pengajuan dengan konfirmasi
-  const handleCancel = (id) => {
-    const confirmDelete = window.confirm("Apakah Anda yakin ingin membatalkan pengajuan ini?");
-    if (confirmDelete) {
-      const updatedRequests = requests.filter((req) => req.id !== id);
-      setRequests(updatedRequests);
-      localStorage.setItem("administrasiRequests", JSON.stringify(updatedRequests));
-    }
+  const updateStatus = (id, newStatus) => {
+    const updatedRequests = requests.map((req) =>
+      req.id === id ? { ...req, status: newStatus } : req
+    );
+    setRequests(updatedRequests);
+    localStorage.setItem("administrasiRequests", JSON.stringify(updatedRequests));
   };
 
   return (
     <div className="p-4 bg-white rounded-lg shadow">
-      <h2 className="text-lg font-semibold mb-4">Status Pelayanan Administrasi</h2>
+      <h2 className="text-lg font-semibold mb-4">Kelola Pelayanan Administrasi</h2>
       {requests.length === 0 ? (
         <p className="text-gray-500">Belum ada pengajuan.</p>
       ) : (
@@ -42,12 +40,22 @@ const StatusPelayanan = () => {
                 <td className="border border-gray-300 px-4 py-2">{req.fileName}</td>
                 <td className="border border-gray-300 px-4 py-2 text-blue-500">{req.status}</td>
                 <td className="border border-gray-300 px-4 py-2">
-                  <button
-                    onClick={() => handleCancel(req.id)}
-                    className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600"
-                  >
-                    Batalkan
-                  </button>
+                  {req.status === "Diajukan" && (
+                    <button
+                      className="bg-yellow-500 text-white px-2 py-1 rounded"
+                      onClick={() => updateStatus(req.id, "Diproses")}
+                    >
+                      Proses
+                    </button>
+                  )}
+                  {req.status === "Diproses" && (
+                    <button
+                      className="bg-green-500 text-white px-2 py-1 rounded"
+                      onClick={() => updateStatus(req.id, "Selesai")}
+                    >
+                      Selesaikan
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}
@@ -58,4 +66,4 @@ const StatusPelayanan = () => {
   );
 };
 
-export default StatusPelayanan;
+export default KelolaAdministrasi;

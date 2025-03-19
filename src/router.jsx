@@ -4,6 +4,7 @@ import AdminDashboard from "./pages/admin/Dashboard";
 import DosenDashboard from "./pages/dosen/Dashboard";
 import MahasiswaDashboard from "./pages/mahasiswa/Dashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
+import KelolaAdministrasi from "./pages/admin/KelolaAdministrasi";
 
 const AppRouter = () => (
   <Routes>
@@ -19,6 +20,14 @@ const AppRouter = () => (
       element={
         <ProtectedRoute allowedRoles={["admin"]}>
           <AdminDashboard />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/admin/kelola-administrasi"
+      element={
+        <ProtectedRoute allowedRoles={["admin"]}>
+          <KelolaAdministrasi />
         </ProtectedRoute>
       }
     />

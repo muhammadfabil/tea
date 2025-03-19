@@ -14,7 +14,7 @@ const AjukanAdministrasi = () => {
 
     const newRequest = {
       id: Date.now(),
-      service: selectedService,
+      layanan: selectedService,
       fileName: file.name,
       status: "Diajukan",
     };

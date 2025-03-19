@@ -4,6 +4,8 @@ import Navbar from "../../components/Navbar";
 import ProfileCard from "../../components/ProfileCard";
 import AjukanAdministrasi from "./AjukanAdministrasi";
 import StatusPelayanan from "./StatusPelayanan";
+import PilihDosen from "./PilihDosen";
+import PilihJadwal from "./PilihJadwal";
 
 const MahasiswaDashboard = () => (
   <div className="flex">
@@ -26,6 +28,8 @@ const MahasiswaDashboard = () => (
           />
           <Route path="pelayanan" element={<AjukanAdministrasi />} />
           <Route path="status-pelayanan" element={<StatusPelayanan />} />
+          <Route path="pilih-dosen" element={<PilihDosen />} />
+          <Route path="pilih-jadwal" element={<PilihJadwal />} />
         </Routes>
       </div>
     </div>
