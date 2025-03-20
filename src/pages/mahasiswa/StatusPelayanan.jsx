@@ -4,11 +4,18 @@ const StatusPelayanan = () => {
   const [requests, setRequests] = useState([]);
 
   useEffect(() => {
-    const storedRequests = JSON.parse(localStorage.getItem("administrasiRequests")) || [];
-    setRequests(storedRequests);
+    const fetchRequests = () => {
+      const storedRequests = JSON.parse(localStorage.getItem("administrasiRequests")) || [];
+      setRequests(storedRequests);
+    };
+
+    fetchRequests();
+
+    // 🔥 Real-time update setiap 3 detik
+    const interval = setInterval(fetchRequests, 3000);
+    return () => clearInterval(interval);
   }, []);
 
-  // Fungsi untuk membatalkan pengajuan dengan konfirmasi
   const handleCancel = (id) => {
     const confirmDelete = window.confirm("Apakah Anda yakin ingin membatalkan pengajuan ini?");
     if (confirmDelete) {
@@ -42,12 +49,14 @@ const StatusPelayanan = () => {
                 <td className="border border-gray-300 px-4 py-2">{req.fileName}</td>
                 <td className="border border-gray-300 px-4 py-2 text-blue-500">{req.status}</td>
                 <td className="border border-gray-300 px-4 py-2">
-                  <button
-                    onClick={() => handleCancel(req.id)}
-                    className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600"
-                  >
-                    Batalkan
-                  </button>
+                  {req.status === "Diajukan" && (
+                    <button
+                      onClick={() => handleCancel(req.id)}
+                      className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600"
+                    >
+                      Batalkan
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}

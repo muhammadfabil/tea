@@ -8,6 +8,7 @@ const KelolaAdministrasi = () => {
     setRequests(storedRequests);
   }, []);
 
+  // 🔥 Fungsi untuk mengubah status
   const updateStatus = (id, newStatus) => {
     const updatedRequests = requests.map((req) =>
       req.id === id ? { ...req, status: newStatus } : req
@@ -26,6 +27,7 @@ const KelolaAdministrasi = () => {
           <thead>
             <tr className="bg-gray-200">
               <th className="border border-gray-300 px-4 py-2">No</th>
+              <th className="border border-gray-300 px-4 py-2">Mahasiswa</th>
               <th className="border border-gray-300 px-4 py-2">Layanan</th>
               <th className="border border-gray-300 px-4 py-2">Berkas</th>
               <th className="border border-gray-300 px-4 py-2">Status</th>
@@ -36,24 +38,25 @@ const KelolaAdministrasi = () => {
             {requests.map((req, index) => (
               <tr key={req.id} className="text-center">
                 <td className="border border-gray-300 px-4 py-2">{index + 1}</td>
+                <td className="border border-gray-300 px-4 py-2">{req.namaMahasiswa}</td>
                 <td className="border border-gray-300 px-4 py-2">{req.layanan}</td>
                 <td className="border border-gray-300 px-4 py-2">{req.fileName}</td>
                 <td className="border border-gray-300 px-4 py-2 text-blue-500">{req.status}</td>
-                <td className="border border-gray-300 px-4 py-2">
+                <td className="border border-gray-300 px-4 py-2 space-x-2">
                   {req.status === "Diajukan" && (
                     <button
-                      className="bg-yellow-500 text-white px-2 py-1 rounded"
                       onClick={() => updateStatus(req.id, "Diproses")}
+                      className="bg-yellow-500 text-white px-3 py-1 rounded text-sm hover:bg-yellow-600"
                     >
                       Proses
                     </button>
                   )}
                   {req.status === "Diproses" && (
                     <button
-                      className="bg-green-500 text-white px-2 py-1 rounded"
                       onClick={() => updateStatus(req.id, "Selesai")}
+                      className="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600"
                     >
-                      Selesaikan
+                      Selesai
                     </button>
                   )}
                 </td>

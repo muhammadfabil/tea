@@ -5,29 +5,31 @@ const AjukanAdministrasi = () => {
   const [file, setFile] = useState(null);
 
   const handleSubmit = (e) => {
-    e.preventDefault();
-
+    e.preventDefault(); // ✅ Mencegah reload halaman
+    
+    const namaMahasiswa = "Mahasiswa A"; // 🚀 Nanti bisa diganti dengan data login
+  
     if (!selectedService || !file) {
-      alert("Pilih layanan dan unggah berkas terlebih dahulu!");
+      alert("Harap pilih layanan dan unggah berkas.");
       return;
     }
-
+  
     const newRequest = {
       id: Date.now(),
+      namaMahasiswa, // ✅ Tambahkan nama mahasiswa
       layanan: selectedService,
-      fileName: file.name,
+      fileName: file.name,  
       status: "Diajukan",
     };
-
-    // Simpan ke localStorage
-    const storedRequests = JSON.parse(localStorage.getItem("administrasiRequests")) || [];
-    localStorage.setItem("administrasiRequests", JSON.stringify([...storedRequests, newRequest]));
-
-    // Reset form
-    setSelectedService("");
-    setFile(null);
+  
+    const existingRequests = JSON.parse(localStorage.getItem("administrasiRequests")) || [];
+    const updatedRequests = [...existingRequests, newRequest];
+  
+    localStorage.setItem("administrasiRequests", JSON.stringify(updatedRequests));
     alert("Pengajuan berhasil!");
   };
+  
+  
 
   return (
     <div className="p-4 bg-white rounded-lg shadow">
