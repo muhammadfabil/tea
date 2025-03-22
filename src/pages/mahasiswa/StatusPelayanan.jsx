@@ -2,19 +2,36 @@ import { useState, useEffect } from "react";
 
 const StatusPelayanan = () => {
   const [requests, setRequests] = useState([]);
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
     const fetchRequests = () => {
       const storedRequests = JSON.parse(localStorage.getItem("administrasiRequests")) || [];
-      setRequests(storedRequests);
+      const loggedInUser = JSON.parse(sessionStorage.getItem("user")); // Ambil user yang sedang login
+      
+      console.log("User Login:", loggedInUser);
+      console.log("📂 Data dari localStorage:", storedRequests);
+  
+      setUser(loggedInUser);
+  
+      if (loggedInUser && loggedInUser.role === "mahasiswa") {
+        // 🔥 Mahasiswa hanya melihat datanya sendiri
+        const filteredRequests = storedRequests.filter(
+          (req) => req.namaMahasiswa === loggedInUser.nama
+        );
+        console.log("✅ Data yang ditampilkan:", filteredRequests);
+        setRequests(filteredRequests);
+      } else {
+        // 🔥 Admin/Dosen bisa melihat semua data
+        setRequests(storedRequests);
+      }
     };
-
+  
     fetchRequests();
-
-    // 🔥 Real-time update setiap 3 detik
     const interval = setInterval(fetchRequests, 3000);
     return () => clearInterval(interval);
   }, []);
+  
 
   const handleCancel = (id) => {
     const confirmDelete = window.confirm("Apakah Anda yakin ingin membatalkan pengajuan ini?");

@@ -4,12 +4,29 @@ const KelolaAdministrasi = () => {
   const [requests, setRequests] = useState([]);
 
   useEffect(() => {
-    const storedRequests = JSON.parse(localStorage.getItem("administrasiRequests")) || [];
-    setRequests(storedRequests);
+    const fetchRequests = () => {
+      const storedRequests = JSON.parse(localStorage.getItem("administrasiRequests")) || [];
+      setRequests(storedRequests);
+    };
+
+    fetchRequests();
+
+    // 🔥 Real-time update setiap 3 detik
+    const interval = setInterval(fetchRequests, 3000);
+    return () => clearInterval(interval);
   }, []);
 
-  // 🔥 Fungsi untuk mengubah status
+  // ✅ Fungsi untuk mengubah status dengan konfirmasi
   const updateStatus = (id, newStatus) => {
+    const confirmationMessage =
+      newStatus === "Diproses"
+        ? "Yakin ingin memproses pengajuan ini?"
+        : "Yakin ingin menyelesaikan pengajuan ini?";
+    
+    if (!window.confirm(confirmationMessage)) {
+      return; // Batalkan jika user memilih "Batal"
+    }
+
     const updatedRequests = requests.map((req) =>
       req.id === id ? { ...req, status: newStatus } : req
     );

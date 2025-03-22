@@ -14,7 +14,7 @@ const AppRouter = () => (
     {/* Login */}
     <Route path="/login" element={<Login />} />
 
-    {/* Admin */}
+    {/* ✅ Admin (Gunakan `*` agar child routes bisa masuk) */}
     <Route
       path="/admin/*"
       element={
@@ -32,7 +32,7 @@ const AppRouter = () => (
       }
     />
 
-    {/* Dosen */}
+    {/* ✅ Dosen */}
     <Route
       path="/dosen/*"
       element={
@@ -42,7 +42,7 @@ const AppRouter = () => (
       }
     />
 
-    {/* Mahasiswa */}
+    {/* ✅ Mahasiswa */}
     <Route
       path="/mahasiswa/*"
       element={

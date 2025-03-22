@@ -7,7 +7,11 @@ const AjukanAdministrasi = () => {
   const handleSubmit = (e) => {
     e.preventDefault(); // ✅ Mencegah reload halaman
     
-    const namaMahasiswa = "Mahasiswa A"; // 🚀 Nanti bisa diganti dengan data login
+    const loggedInUser = JSON.parse(sessionStorage.getItem("user")); // 🔥 Ambil data user yang login
+    if (!loggedInUser) {
+      alert("Anda harus login terlebih dahulu!");
+      return;
+    }
   
     if (!selectedService || !file) {
       alert("Harap pilih layanan dan unggah berkas.");
@@ -16,7 +20,7 @@ const AjukanAdministrasi = () => {
   
     const newRequest = {
       id: Date.now(),
-      namaMahasiswa, // ✅ Tambahkan nama mahasiswa
+      namaMahasiswa: loggedInUser.nama, // ✅ Gunakan nama dari user login
       layanan: selectedService,
       fileName: file.name,  
       status: "Diajukan",
@@ -27,7 +31,12 @@ const AjukanAdministrasi = () => {
   
     localStorage.setItem("administrasiRequests", JSON.stringify(updatedRequests));
     alert("Pengajuan berhasil!");
+  
+    // Reset form setelah pengajuan
+    setSelectedService(""); 
+    setFile(null);
   };
+  
   
   
 
