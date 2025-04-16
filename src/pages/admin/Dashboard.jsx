@@ -1,31 +1,22 @@
-import { Link } from "react-router-dom";
-import AdminSidebar from "../../components/sidebar/AdminSidebar";
-import Navbar from "../../components/Navbar";
-import ProfileCard from "../../components/ProfileCard";
+import React from "react";
 
 const AdminDashboard = () => {
   return (
-    <div className="flex">
-      <AdminSidebar />
-      <div className="flex-1">
-        <Navbar title="Admin Dashboard" />
-        <div className="p-4">
-          <ProfileCard name="Admin A" email="admin@example.com" role="admin" />
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold text-blue-600">Dashboard Admin</h1>
 
-          {/* Menu Aksi Admin */}
-          <div className="mt-6">
-            <h2 className="text-lg font-semibold mb-4">Manajemen Layanan</h2>
-            <ul className="space-y-3">
-              <li>
-                <Link
-                  to="/admin/kelola-administrasi"
-                  className="block bg-blue-500 text-white px-4 py-2 rounded text-center"
-                >
-                  📄 Kelola Pelayanan Administrasi
-                </Link>
-              </li>
-            </ul>
-          </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="bg-white rounded-2xl shadow p-4">
+          <h2 className="text-lg font-semibold text-gray-800">Jumlah Mahasiswa</h2>
+          <p className="text-3xl font-bold text-blue-500">120</p>
+        </div>
+        <div className="bg-white rounded-2xl shadow p-4">
+          <h2 className="text-lg font-semibold text-gray-800">Jumlah Dosen</h2>
+          <p className="text-3xl font-bold text-blue-500">10</p>
+        </div>
+        <div className="bg-white rounded-2xl shadow p-4">
+          <h2 className="text-lg font-semibold text-gray-800">Layanan Masuk</h2>
+          <p className="text-3xl font-bold text-blue-500">45</p>
         </div>
       </div>
     </div>

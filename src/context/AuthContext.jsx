@@ -16,6 +16,13 @@ export const AuthProvider = ({ children }) => {
     console.log("📌 Cek user di AuthContext setelah reload:", user);
   }, [user]); // 🔍 Debugging: Pastikan user diperbarui saat reload
 
+  useEffect(() => {
+    const storedUser = sessionStorage.getItem("user");
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+  }, []); // 🔄 Pastikan user diperbarui dari sessionStorage saat pertama kali aplikasi dimuat
+
   const login = (userData) => {
     console.log("✅ Login sukses, simpan ke sessionStorage:", userData);
     sessionStorage.setItem("user", JSON.stringify(userData));

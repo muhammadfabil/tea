@@ -1,93 +1,104 @@
-import { useState, useEffect } from "react";
+import React, { useState } from "react";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const daftarDosen = [
-  { id: 1, nama: "Dr. Budi Santoso", nip: "19790101 123456 1 001" },
-  { id: 2, nama: "Prof. Siti Aminah", nip: "19800202 654321 2 002" },
-  { id: 3, nama: "Dr. Ahmad Fauzi", nip: "19810303 789456 3 003" },
-  { id: 4, nama: "Dr. Rina Kartika", nip: "19820404 321987 4 004" },
+  "Dr. Andi Saputra",
+  "Prof. Rina Wijaya",
+  "Ir. Budi Hartono",
+  "Dr. Siti Aminah"
 ];
 
 const PilihDosen = () => {
-  const [dosen1, setDosen1] = useState("");
-  const [dosen2, setDosen2] = useState("");
+  const [pembimbing1, setPembimbing1] = useState("");
+  const [pembimbing2, setPembimbing2] = useState("");
+  const [penguji1, setPenguji1] = useState("");
+  const [penguji2, setPenguji2] = useState("");
 
-  // Load data dari localStorage saat pertama kali masuk halaman
-  useEffect(() => {
-    const savedDosen = JSON.parse(localStorage.getItem("dosenTerpilih"));
-    if (savedDosen) {
-      setDosen1(savedDosen[0] || "");
-      setDosen2(savedDosen[1] || "");
-    }
-  }, []);
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const allSelected = [pembimbing1, pembimbing2, penguji1, penguji2];
+    const hasDuplicate = new Set(allSelected).size !== allSelected.length;
 
-  const handleSubmit = () => {
-    if (!dosen1 || !dosen2) {
-      alert("Silakan pilih dua dosen pembimbing!");
+    if (hasDuplicate) {
+        toast.error("Dosen tidak boleh sama. Harap pilih dosen yang berbeda.");
       return;
     }
 
-    if (dosen1 === dosen2) {
-      alert("Dosen 1 dan Dosen 2 tidak boleh sama!");
-      return;
-    }
-
-    const confirm = window.confirm(
-      `Konfirmasi Pilihan Dosen:\n- ${dosen1}\n- ${dosen2}\nLanjutkan?`
-    );
-
-    if (confirm) {
-      localStorage.setItem("dosenTerpilih", JSON.stringify([dosen1, dosen2]));
-      alert("Dosen pembimbing berhasil dipilih!");
-    }
+    toast.success("Pilihan dosen berhasil disimpan!");
   };
 
   return (
-    <div className="p-4 bg-white rounded-lg shadow">
-      <h2 className="text-lg font-semibold mb-4">Pilih Dosen Pembimbing</h2>
+    <div className="p-4 md:ml-64">
+      <h1 className="text-2xl md:text-3xl font-bold text-[#005AE6] mb-6">
+        Pilih Dosen Pembimbing & Penguji
+      </h1>
 
-      <div className="space-y-4">
-        {/* Dropdown Dosen 1 */}
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-6 max-w-xl">
         <div>
-          <label className="block text-sm font-medium">Dosen 1:</label>
+          <label className="block text-sm mb-1 font-medium text-gray-700">Dosen Pembimbing 1</label>
           <select
-            className="border p-2 w-full"
-            value={dosen1}
-            onChange={(e) => setDosen1(e.target.value)}
+            value={pembimbing1}
+            onChange={(e) => setPembimbing1(e.target.value)}
+            className="w-full p-3 border rounded focus:outline-none focus:ring-2 focus:ring-[#005AE6]"
           >
-            <option value="">Pilih Dosen</option>
+            <option value="">-- Pilih Dosen --</option>
             {daftarDosen.map((dosen) => (
-              <option key={dosen.id} value={dosen.nama}>
-                {dosen.nama}
-              </option>
+              <option key={dosen} value={dosen}>{dosen}</option>
             ))}
           </select>
         </div>
 
-        {/* Dropdown Dosen 2 */}
         <div>
-          <label className="block text-sm font-medium">Dosen 2:</label>
+          <label className="block text-sm mb-1 font-medium text-gray-700">Dosen Pembimbing 2</label>
           <select
-            className="border p-2 w-full"
-            value={dosen2}
-            onChange={(e) => setDosen2(e.target.value)}
+            value={pembimbing2}
+            onChange={(e) => setPembimbing2(e.target.value)}
+            className="w-full p-3 border rounded focus:outline-none focus:ring-2 focus:ring-[#005AE6]"
           >
-            <option value="">Pilih Dosen</option>
+            <option value="">-- Pilih Dosen --</option>
             {daftarDosen.map((dosen) => (
-              <option key={dosen.id} value={dosen.nama}>
-                {dosen.nama}
-              </option>
+              <option key={dosen} value={dosen}>{dosen}</option>
             ))}
           </select>
         </div>
 
-        {/* Tombol Konfirmasi */}
+        <div>
+          <label className="block text-sm mb-1 font-medium text-gray-700">Dosen Penguji 1</label>
+          <select
+            value={penguji1}
+            onChange={(e) => setPenguji1(e.target.value)}
+            className="w-full p-3 border rounded focus:outline-none focus:ring-2 focus:ring-[#005AE6]"
+          >
+            <option value="">-- Pilih Dosen --</option>
+            {daftarDosen.map((dosen) => (
+              <option key={dosen} value={dosen}>{dosen}</option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm mb-1 font-medium text-gray-700">Dosen Penguji 2</label>
+          <select
+            value={penguji2}
+            onChange={(e) => setPenguji2(e.target.value)}
+            className="w-full p-3 border rounded focus:outline-none focus:ring-2 focus:ring-[#005AE6]"
+          >
+            <option value="">-- Pilih Dosen --</option>
+            {daftarDosen.map((dosen) => (
+              <option key={dosen} value={dosen}>{dosen}</option>
+            ))}
+          </select>
+        </div>
+
         <button
-          className="bg-blue-500 text-white px-4 py-2 rounded"
-          onClick={handleSubmit}
+          type="submit"
+          className="bg-[#005AE6] text-white py-3 rounded hover:bg-[#0041b3] transition"
         >
-          Konfirmasi Pilihan
+          Simpan Pilihan
         </button>
-      </div>
+      </form>
+      <ToastContainer position="top-right" autoClose={3000} />
     </div>
   );
 };

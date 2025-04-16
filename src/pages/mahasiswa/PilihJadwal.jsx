@@ -1,130 +1,151 @@
-import { useState, useEffect } from "react";
+import React, { useState } from "react";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
-const daftarJadwal = [
-  { id: 1, dosen: "Dr. Budi Santoso", waktu: "Senin, 09:00 - 10:00" },
-  { id: 2, dosen: "Dr. Budi Santoso", waktu: "Rabu, 13:00 - 14:00" },
-  { id: 3, dosen: "Prof. Siti Aminah", waktu: "Selasa, 10:00 - 11:00" },
-  { id: 4, dosen: "Prof. Siti Aminah", waktu: "Jumat, 14:00 - 15:00" },
-  { id: 5, dosen: "Dr. Ahmad Fauzi", waktu: "Senin, 15:00 - 16:00" },
-  { id: 6, dosen: "Dr. Ahmad Fauzi", waktu: "Kamis, 08:00 - 09:00" },
-  { id: 7, dosen: "Dr. Rina Kartika", waktu: "Rabu, 10:00 - 11:00" },
-  { id: 8, dosen: "Dr. Rina Kartika", waktu: "Kamis, 13:00 - 14:00" },
-];
+// Modal Antrean Baru - Blur background, data dummy mahasiswa
+const ModalAntrean = ({ isOpen, onClose, dosen, namaMahasiswa }) => {
+  if (!isOpen) return null;
 
-const PilihJadwal = () => {
-  const [jadwalTerpilih, setJadwalTerpilih] = useState([]);
-  const [jadwalTersedia, setJadwalTersedia] = useState([]);
-  const [selectedJadwal, setSelectedJadwal] = useState("");
-
-  // Ambil data dosen yang sudah dipilih dari localStorage
-  useEffect(() => {
-    const savedDosen = JSON.parse(localStorage.getItem("dosenTerpilih")) || [];
-    if (savedDosen.length === 2) {
-      const filteredJadwal = daftarJadwal.filter((j) =>
-        savedDosen.includes(j.dosen)
-      );
-      setJadwalTersedia(filteredJadwal);
-    }
-
-    // Ambil jadwal yang sudah dipilih sebelumnya
-    const savedJadwal = JSON.parse(localStorage.getItem("jadwalBimbingan")) || [];
-    setJadwalTerpilih(savedJadwal);
-  }, []);
-
-  const handlePilihJadwal = () => {
-    if (!selectedJadwal) {
-      alert("Silakan pilih jadwal bimbingan!");
-      return;
-    }
-
-    const confirm = window.confirm(
-      `Konfirmasi Pilihan Jadwal:\n${selectedJadwal}\nLanjutkan?`
-    );
-
-    if (confirm) {
-      const newJadwal = [...jadwalTerpilih, selectedJadwal];
-      setJadwalTerpilih(newJadwal);
-      localStorage.setItem("jadwalBimbingan", JSON.stringify(newJadwal));
-      alert("Jadwal bimbingan berhasil dipilih!");
-    }
+  // Dummy data mahasiswa antre
+  const dummyAntrean = {
+    "Dosen 1": ["Andi", "Budi", "Citra", "Dewi", namaMahasiswa],
+    "Dosen 2": ["Rina", "Eko", namaMahasiswa, "Fajar", "Gita"],
   };
 
-  const handleHapusJadwal = (jadwal) => {
-    const confirm = window.confirm(`Apakah Anda yakin ingin menghapus jadwal ini?\n${jadwal}`);
-    if (confirm) {
-      const updatedJadwal = jadwalTerpilih.filter((item) => item !== jadwal);
-      setJadwalTerpilih(updatedJadwal);
-      localStorage.setItem("jadwalBimbingan", JSON.stringify(updatedJadwal));
-      alert("Jadwal berhasil dihapus!");
-    }
+  const antrean = dummyAntrean[dosen] || [];
+  const posisiSaya = antrean.indexOf(namaMahasiswa) + 1;
+  const posisiSekarang = 2; // Simulasi: sekarang yang dipanggil urutan ke-2
+
+  return (
+    <div className="fixed inset-0 z-50 backdrop-blur-sm bg-black/10 flex items-center justify-center">
+      <div className="bg-white p-6 rounded-xl shadow-xl w-[90%] max-w-md relative">
+        {/* Tombol Close */}
+        <button
+          onClick={onClose}
+          className="absolute top-2 right-2 text-gray-400 hover:text-red-500 text-2xl"
+        >
+          &times;
+        </button>
+
+        <h2 className="text-xl font-bold text-[#005AE6] mb-4 text-center">Detail Antrean Bimbingan</h2>
+        
+        <div className="mb-4">
+          <p><strong>Dosen:</strong> {dosen}</p>
+          <p><strong>Antrean Saat Ini:</strong> Urutan #{posisiSekarang}</p>
+          <p>
+            <strong>Posisi Anda:</strong>{" "}
+            {posisiSaya > 0 ? `Urutan #${posisiSaya}` : "Belum masuk antrean"}
+          </p>
+        </div>
+
+        <div>
+          <h3 className="font-semibold text-sm mb-2 text-[#005AE6]">Daftar Mahasiswa Dalam Antrean:</h3>
+          <ul className="list-decimal list-inside text-gray-700 text-sm space-y-1">
+            {antrean.map((nama, index) => (
+              <li key={index} className={nama === namaMahasiswa ? "font-semibold text-[#005AE6]" : ""}>
+                {nama}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="text-xs text-gray-400 mt-4 text-center">*Data ini hanya simulasi</div>
+      </div>
+    </div>
+  );
+};
+
+const PilihJadwal = () => {
+  const [selectedJadwal, setSelectedJadwal] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+
+  const namaMahasiswa = "Nama Saya"; // nanti ambil dari context / props
+
+  const dosenTerpilih = ["Dosen 1", "Dosen 2"];
+
+  const dummyJadwal = [
+    {
+      dosen: "Dosen 1",
+      jadwal: [
+        { hari: "Senin", waktu: "08:00 - 10:00" },
+        { hari: "Rabu", waktu: "13:00 - 15:00" },
+      ],
+    },
+    {
+      dosen: "Dosen 2",
+      jadwal: [
+        { hari: "Selasa", waktu: "09:00 - 11:00" },
+        { hari: "Kamis", waktu: "14:00 - 16:00" },
+      ],
+    },
+  ];
+
+  const handleSelectJadwal = (dosen, jadwal) => {
+    setSelectedJadwal({ dosen, jadwal });
+    toast.success(`Jadwal dengan ${dosen} pada ${jadwal.hari} - ${jadwal.waktu} telah dipilih!`);
   };
 
   return (
-    <div className="p-4 bg-white rounded-lg shadow">
-      <h2 className="text-lg font-semibold mb-4">Pilih Jadwal Bimbingan</h2>
+    <div className="p-4 md:ml-10">
+      <h1 className="text-2xl font-bold text-[#005AE6] mb-6">Pilih Jadwal Bimbingan</h1>
 
-      {jadwalTersedia.length === 0 ? (
-        <p className="text-gray-500">Silakan pilih dosen pembimbing terlebih dahulu.</p>
-      ) : (
-        <div className="space-y-4">
-          {/* Dropdown Pilih Jadwal */}
-          <div>
-            <label className="block text-sm font-medium">Pilih Jadwal:</label>
-            <select
-              className="border p-2 w-full"
-              value={selectedJadwal}
-              onChange={(e) => setSelectedJadwal(e.target.value)}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {dosenTerpilih.length > 0 ? (
+          dosenTerpilih.map((dosen, index) => (
+            <div key={index} className="bg-white p-6 rounded-lg shadow-md">
+              <h2 className="text-xl font-semibold text-[#005AE6] mb-4">{dosen}</h2>
+              <ul>
+                {dummyJadwal
+                  .filter((j) => j.dosen === dosen)
+                  .map((dosenJadwal) =>
+                    dosenJadwal.jadwal.map((jadwal, index) => (
+                      <li key={index} className="mb-3">
+                        <div className="flex justify-between items-center">
+                          <span>{jadwal.hari} - {jadwal.waktu}</span>
+                          <button
+                            onClick={() => handleSelectJadwal(dosen, jadwal)}
+                            className="bg-[#005AE6] text-white py-2 px-4 rounded hover:bg-[#004BB5] transition"
+                          >
+                            Pilih
+                          </button>
+                        </div>
+                      </li>
+                    ))
+                  )}
+              </ul>
+            </div>
+          ))
+        ) : (
+          <div className="text-center text-lg text-red-500">Anda belum memilih dosen pembimbing.</div>
+        )}
+      </div>
+
+      {selectedJadwal && (
+        <>
+          <div className="mt-6 p-4 bg-[#e0f7fa] rounded-md text-[#00796b]">
+            <h2 className="font-semibold">Jadwal Terpilih</h2>
+            <p>Dosen: {selectedJadwal.dosen}</p>
+            <p>Hari: {selectedJadwal.jadwal.hari}</p>
+            <p>Waktu: {selectedJadwal.jadwal.waktu}</p>
+
+            <button
+              onClick={() => setShowModal(true)}
+              className="mt-4 bg-[#005AE6] hover:bg-[#004bb5] text-white py-2 px-4 rounded transition"
             >
-              <option value="">Pilih Jadwal</option>
-              {jadwalTersedia.map((jadwal) => (
-                <option key={jadwal.id} value={`${jadwal.dosen} - ${jadwal.waktu}`}>
-                  {jadwal.dosen} - {jadwal.waktu}
-                </option>
-              ))}
-            </select>
+              Lihat Urutan Saya
+            </button>
           </div>
 
-          {/* Tombol Konfirmasi */}
-          <button
-            className="bg-blue-500 text-white px-4 py-2 rounded"
-            onClick={handlePilihJadwal}
-          >
-            Konfirmasi Jadwal
-          </button>
-
-          {/* Tabel Jadwal yang Sudah Dipilih */}
-          {jadwalTerpilih.length > 0 && (
-            <div className="mt-6">
-              <h3 className="text-md font-semibold mb-2">Jadwal yang Dipilih</h3>
-              <table className="w-full border-collapse border border-gray-300">
-                <thead>
-                  <tr className="bg-gray-200">
-                    <th className="border border-gray-300 px-4 py-2">No</th>
-                    <th className="border border-gray-300 px-4 py-2">Jadwal</th>
-                    <th className="border border-gray-300 px-4 py-2">Aksi</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {jadwalTerpilih.map((jadwal, index) => (
-                    <tr key={index} className="text-center">
-                      <td className="border border-gray-300 px-4 py-2">{index + 1}</td>
-                      <td className="border border-gray-300 px-4 py-2">{jadwal}</td>
-                      <td className="border border-gray-300 px-4 py-2">
-                        <button
-                          className="bg-red-500 text-white px-3 py-1 rounded"
-                          onClick={() => handleHapusJadwal(jadwal)}
-                        >
-                          Hapus
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+          <ModalAntrean
+            isOpen={showModal}
+            onClose={() => setShowModal(false)}
+            dosen={selectedJadwal.dosen}
+            namaMahasiswa={namaMahasiswa}
+          />
+        </>
       )}
+
+      <ToastContainer position="top-right" autoClose={3000} />
     </div>
   );
 };

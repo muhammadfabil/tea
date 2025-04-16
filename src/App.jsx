@@ -1,4 +1,4 @@
-import AppRouter from "./router";
+import AppRouter from "./router/index";
 import { AuthProvider } from "./context/AuthContext";
 import PwaBadge from "./pwa/PwaBadge"; // ✅ Impor PwaBadge di sini
 
