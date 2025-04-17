@@ -1,16 +1,15 @@
-import { VitePWA } from 'vite-plugin-pwa';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
+import { VitePWA } from 'vite-plugin-pwa';
 
-// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
     VitePWA({
-      registerType: 'autoUpdate',
-      injectRegister: false,
+      registerType: 'autoUpdate', // penting!
+      injectRegister: 'auto',     // auto daftar SW ke index.html
 
       manifest: {
         name: 'Sistem Antrian Pelayanan Prodi & Administrasi',
@@ -43,30 +42,54 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,ico}'],
         cleanupOutdatedCaches: true,
+        clientsClaim: true,
+
         runtimeCaching: [
           {
+            // HTML documents (utama)
             urlPattern: ({ request }) => request.destination === 'document',
             handler: 'NetworkFirst',
             options: {
               cacheName: 'html-cache',
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 60 * 60 * 24, // 1 hari
+              },
             },
           },
           {
-            urlPattern: ({ request }) => request.destination === 'script' || request.destination === 'style',
+            // Static files (JS/CSS)
+            urlPattern: ({ request }) =>
+              request.destination === 'style' || request.destination === 'script',
             handler: 'StaleWhileRevalidate',
             options: {
               cacheName: 'static-resources',
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 60 * 24 * 30, // 30 hari
+              },
+            },
+          },
+          {
+            // Backend API (Railway FastAPI)
+            urlPattern: /^https:\/\/.*\.railway\.app\/.*$/,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'api-cache',
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 3600, // 1 jam
+              },
             },
           },
         ],
-        clientsClaim: true,
       },
 
       devOptions: {
         enabled: true,
+        type: 'module',
         navigateFallback: 'index.html',
         suppressWarnings: true,
-        type: 'module',
       },
     }),
   ],
