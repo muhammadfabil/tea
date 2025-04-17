@@ -26,7 +26,7 @@ const LandingPage = () => {
         </div>
 
         <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 leading-tight">
-          Selamat Datang di <span className="text-yellow-300">SIMANTAP</span>
+          Selamat Datang di <span className="text-yellow-300">SIMANTAP11</span>
         </h1>
 
         <p className="text-sm sm:text-base md:text-lg text-white/90 mb-8">
