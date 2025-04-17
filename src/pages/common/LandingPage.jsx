@@ -26,7 +26,7 @@ const LandingPage = () => {
         </div>
 
         <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 leading-tight">
-          Selamat Datang di <span className="text-yellow-300">SIMANTAP11</span>
+          Selamat Datang di <span className="text-yellow-300">SIMANTAP22</span>
         </h1>
 
         <p className="text-sm sm:text-base md:text-lg text-white/90 mb-8">
@@ -42,7 +42,7 @@ const LandingPage = () => {
           </Link>
           <Link
             to="/antrean-dosen"
-            className="bg-[#ffffffcc] text-[#1277C9] font-semibold px-6 py-3 rounded-full shadow hover:bg-gray-100 transition duration-200 w-full sm:w-auto text-center"
+            className="bg-white text-[#1277C9] font-semibold px-6 py-3 rounded-full shadow hover:bg-gray-100 transition duration-200 w-full sm:w-auto text-center"
           >
             Lihat Antrean Dosen
           </Link>
