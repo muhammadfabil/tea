@@ -93,4 +93,11 @@ export default defineConfig({
       },
     }),
   ],
+
+  // Menambahkan konfigurasi proxy di sini
+  server: {
+    proxy: {
+      '/dosen': 'http://127.0.0.1:8000',  // Mengarahkan ke server backend lokal
+    },
+  },
 });

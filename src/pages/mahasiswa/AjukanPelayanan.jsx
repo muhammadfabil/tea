@@ -1,72 +1,150 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { createClient } from "@supabase/supabase-js";
+import { Loader2, Download, FileUp } from "lucide-react";
 
-const layananList = [
-  "1. Surat Aktif Kuliah", "2. Surat Cuti Kuliah", "3. Surat Keterangan Lulus", "4. Legalisir Ijazah",
-  "5. Legalisir Transkrip", "6. Pindah Kampus", "7. Permohonan Magang", "8. Surat Rekomendasi Beasiswa",
-  "9. Pengajuan Yudisium", "10. Surat Dispensasi", "11. Pengajuan Pembimbing Skripsi",
-  "12. Pengajuan Pembimbing KP", "13. Revisi Transkrip", "14. Keterangan Tidak Menerima Beasiswa",
-  "15. Surat Pengantar Penelitian", "16. Permohonan Ujian Skripsi", "17. Perpanjangan Studi",
-  "18. Izin Penelitian", "19. Permohonan Sidang KP", "20. Penyerahan Revisi Skripsi",
-  "21. Pendaftaran Wisuda", "22. Permohonan Surat Bebas Lab", "23. Permohonan Surat Bebas Pustaka",
-  "24. Surat Keterangan Alumni", "25. Permohonan Surat Bebas UKT"
-];
+// Supabase Setup
+const supabaseUrl = "https://btqlxdvroxtzzcikwsqg.supabase.co";
+const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ0cWx4ZHZyb3h0enpjaWt3c3FnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NDkxMTU2MSwiZXhwIjoyMDYwNDg3NTYxfQ.xR6gP_mryGjY_NOoTcKSONevXl3B5qxeTHtjJScF6jE"; // Ganti dengan yang asli
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+// Dummy NIM
+const dummyNIM = "1234567890";
 
 const AjukanPelayanan = () => {
-  const [layanan, setLayanan] = useState("");
+  const [layananList, setLayananList] = useState([]);
+  const [selectedLayanan, setSelectedLayanan] = useState(null);
   const [berkas, setBerkas] = useState(null);
+  const [uploading, setUploading] = useState(false);
 
-  const handleSubmit = (e) => {
+  useEffect(() => {
+    fetch("http://127.0.0.1:8000/layanan/jenis")
+      .then((res) => res.json())
+      .then((data) => {
+        const activeLayanan = data.filter((item) => item.is_aktif);
+        setLayananList(activeLayanan);
+      })
+      .catch(() => toast.error("Gagal mengambil data layanan."));
+  }, []);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!layanan || !berkas) {
+    if (!selectedLayanan || !berkas) {
       toast.error("Mohon pilih layanan dan unggah berkas.");
       return;
     }
 
-    toast.success("Layanan berhasil diajukan!");
-    // Reset form
-    setLayanan("");
-    setBerkas(null);
+    setUploading(true);
+
+    const fileExt = berkas.name.split(".").pop();
+    const date = new Date();
+    const tanggal = `${String(date.getDate()).padStart(2, "0")}${String(date.getMonth() + 1).padStart(2, "0")}${date.getFullYear()}`;
+    const originalName = berkas.name.replace(/\s+/g, "_");
+    const fileName = `${originalName}_${dummyNIM}_${tanggal}.${fileExt}`;
+    const filePath = `uploads/${fileName}`;
+
+    const { data, error } = await supabase.storage
+      .from("layanan-administrasi")
+      .upload(filePath, berkas);
+
+    setUploading(false);
+
+    if (error) {
+      toast.error("Gagal mengunggah berkas.");
+      console.error(error);
+    } else {
+      toast.success("Layanan berhasil diajukan!");
+      setSelectedLayanan(null);
+      setBerkas(null);
+    }
   };
 
   return (
     <div className="p-4 md:ml-64">
-      <h1 className="text-2xl font-bold text-[#005AE6] mb-6">Ajukan Pelayanan Administrasi</h1>
+      <h1 className="text-2xl font-bold text-[#1277C9] mb-6">
+        Ajukan Pelayanan Administrasi
+      </h1>
 
-      <form onSubmit={handleSubmit} className="grid gap-6 max-w-xl">
-        {/* Dropdown */}
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white rounded-xl shadow p-4 space-y-6 max-w-xl w-full"
+      >
         <div>
-          <label className="block mb-2 font-medium">Pilih Layanan</label>
+          <label className="block mb-2 font-medium text-sm">Pilih Layanan</label>
           <select
-            className="w-full border border-gray-300 rounded px-3 py-2"
-            value={layanan}
-            onChange={(e) => setLayanan(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+            value={selectedLayanan?.id || ""}
+            onChange={(e) => {
+              const layanan = layananList.find(
+                (item) => item.id === parseInt(e.target.value)
+              );
+              setSelectedLayanan(layanan || null);
+            }}
           >
             <option value="">-- Pilih Layanan --</option>
-            {layananList.map((item, index) => (
-              <option key={index} value={item}>{item}</option>
+            {layananList.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.nama_layanan}
+              </option>
             ))}
           </select>
         </div>
 
-        {/* Upload file */}
+        {selectedLayanan && (
+          <>
+            <div className="bg-gray-50 p-3 rounded-lg border text-sm text-gray-700">
+              <p><strong>Deskripsi Lampiran:</strong></p>
+              <p>{selectedLayanan.deskripsi}</p>
+
+              {selectedLayanan.url_file && (
+                <a
+                  href={selectedLayanan.url_file}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex mt-2 items-center gap-2 text-[#1277C9] hover:underline"
+                >
+                  <Download size={18} />
+                  Unduh Template
+                </a>
+              )}
+            </div>
+          </>
+        )}
+
         <div>
-          <label className="block mb-2 font-medium">Unggah Berkas (PDF)</label>
-          <input
-            type="file"
-            accept=".pdf"
-            onChange={(e) => setBerkas(e.target.files[0])}
-            className="w-full border border-gray-300 rounded px-3 py-2"
-          />
+          <label className="block mb-2 font-medium text-sm">
+            Unggah Berkas (PDF)
+          </label>
+          <div className="flex items-center gap-3">
+            <input
+              type="file"
+              accept=".pdf"
+              onChange={(e) => setBerkas(e.target.files[0])}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+            />
+            <FileUp size={20} className="text-[#1277C9]" />
+          </div>
+          {berkas && (
+            <p className="text-sm mt-2 text-gray-600">
+              Nama file: <strong>{berkas.name}</strong>
+            </p>
+          )}
         </div>
 
-        {/* Button */}
         <button
           type="submit"
-          className="bg-[#005AE6] text-white py-3 rounded hover:bg-[#0041b3] transition"
+          disabled={uploading}
+          className="bg-[#1277C9] text-white py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 hover:bg-[#0d5cb5] transition text-sm"
         >
-          Ajukan
+          {uploading ? (
+            <>
+              <Loader2 className="animate-spin" size={18} />
+              Mengunggah...
+            </>
+          ) : (
+            <>Ajukan</>
+          )}
         </button>
       </form>
 

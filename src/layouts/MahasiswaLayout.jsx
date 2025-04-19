@@ -37,14 +37,6 @@ const MahasiswaLayout = () => {
             Dashboard
           </NavLink>
           <NavLink
-            to="/mahasiswa/pilih-dosen"
-            className={({ isActive }) =>
-              `${navItem} ${isActive ? activeNav : "text-gray-800"}`
-            }
-          >
-            Pilih Dosen
-          </NavLink>
-          <NavLink
             to="/mahasiswa/ajukan-layanan"
             className={({ isActive }) =>
               `${navItem} ${isActive ? activeNav : "text-gray-800"}`
@@ -68,11 +60,19 @@ const MahasiswaLayout = () => {
           >
             Pilih Jadwal
           </NavLink>
+          <NavLink
+            to="/mahasiswa/isi-data-dosen"
+            className={({ isActive }) =>
+              `${navItem} ${isActive ? activeNav : "text-gray-800"}`
+            }
+          >
+            Isi Data Dosen
+          </NavLink>
         </nav>
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col ml-0 md:ml-16">
+      <div className="flex-1 flex flex-col ml-0 md:ml-10">
         {/* Topbar for mobile */}
         <div className="md:hidden flex items-center justify-between p-4 bg-white shadow">
           <button onClick={toggleSidebar}>
@@ -87,7 +87,7 @@ const MahasiswaLayout = () => {
         </main>
       </div>
     </div>
-  );  
+  );
 };
 
 export default MahasiswaLayout;

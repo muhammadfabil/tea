@@ -12,7 +12,6 @@ import MahasiswaLayout from "../layouts/MahasiswaLayout";
 
 // Halaman Mahasiswa
 import DashboardMahasiswa from "../pages/mahasiswa/DashboardMahasiswa";
-import PilihDosen from "../pages/mahasiswa/PilihDosen";
 import AjukanPelayanan from "../pages/mahasiswa/AjukanPelayanan";
 import StatusPelayanan from "../pages/mahasiswa/StatusPelayanan";
 import PilihJadwal from "../pages/mahasiswa/PilihJadwal";
@@ -33,6 +32,7 @@ import AdminDashboard from "../pages/admin/Dashboard";
 import AdminMahasiswa from "../pages/admin/Mahasiswa";
 import AdminDosen from "../pages/admin/Dosen"; // ← perbaikan path, tadi typo "./.pages"
 import AdminPelayanan from "../pages/admin/Pelayanan";
+import IsiDataDosen from "../pages/mahasiswa/IsiDataDosen";
 
 const AppRouter = () => {
   return (
@@ -45,7 +45,7 @@ const AppRouter = () => {
       {/* Rute untuk Mahasiswa */}
       <Route path="/mahasiswa" element={<MahasiswaLayout />}>
         <Route path="dashboard" element={<DashboardMahasiswa />} />
-        <Route path="pilih-dosen" element={<PilihDosen />} />
+        <Route path="isi-data-dosen" element={<IsiDataDosen />} />
         <Route path="ajukan-layanan" element={<AjukanPelayanan />} />
         <Route path="status-layanan" element={<StatusPelayanan />} />
         <Route path="pilih-jadwal" element={<PilihJadwal />} />
