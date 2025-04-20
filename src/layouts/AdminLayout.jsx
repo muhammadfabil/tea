@@ -60,6 +60,14 @@ const AdminLayout = () => {
           >
             Layanan Administrasi
           </NavLink>
+          <NavLink
+            to="/admin/manajemen-pelayanan"
+            className={({ isActive }) =>
+              `${navItem} ${isActive ? activeNav : "text-gray-800"}`
+            }
+          >
+            Manajemen Layanan Administrasi
+          </NavLink>
         </nav>
       </aside>
 

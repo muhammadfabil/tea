@@ -33,6 +33,7 @@ import AdminMahasiswa from "../pages/admin/Mahasiswa";
 import AdminDosen from "../pages/admin/Dosen"; // ← perbaikan path, tadi typo "./.pages"
 import AdminPelayanan from "../pages/admin/Pelayanan";
 import IsiDataDosen from "../pages/mahasiswa/IsiDataDosen";
+import LayananAdmin from "../pages/admin/LayananAdministrasi";
 
 const AppRouter = () => {
   return (
@@ -64,6 +65,7 @@ const AppRouter = () => {
         <Route path="mahasiswa" element={<AdminMahasiswa />} />
         <Route path="dosen" element={<AdminDosen />} />
         <Route path="pelayanan" element={<AdminPelayanan />} />
+        <Route path="manajemen-pelayanan" element={<LayananAdmin />} />
       </Route>
 
       {/* Rute fallback */}
