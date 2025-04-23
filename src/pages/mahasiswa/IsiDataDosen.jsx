@@ -1,214 +1,170 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
+import {
+  User,
+  Save,
+  Users,
+  Pencil,
+  Trash,
+  RefreshCcw,
+  Check,
+} from "lucide-react";
 import "react-toastify/dist/ReactToastify.css";
-import { User, Save, Users, Pencil } from "lucide-react";
+
+const ROLE_MAPPING = {
+  wali: ["Dosen Wali", 1],
+  kp: ["Dosen KP", 1],
+  pbb1: ["Dosen Pembimbing 1", 1],
+  pbb2: ["Dosen Pembimbing 2", 1],
+  pj1: ["Dosen Penguji 1", 1],
+  pj2: ["Dosen Penguji 2", 1],
+};
 
 const IsiDataDosen = () => {
+  const user = JSON.parse(localStorage.getItem("user"));
+  const nim = user?.profile?.nim;
+
   const [daftarDosen, setDaftarDosen] = useState([]);
+  const [relations, setRelations] = useState([]);
   const [formData, setFormData] = useState({
-    dosenWali: "",
-    pembimbing1: "",
-    pembimbing2: "",
-    pembimbingKP: "",
-    penguji1: "",
-    penguji2: "",
+    dosen_alias: "",
+    role: "",
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [isEditing, setIsEditing] = useState(null); // id relasi
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const fetchDosen = async () => {
-      try {
-        const response = await axios.get("http://127.0.0.1:8000/dosen/all");
-        setDaftarDosen(response.data);
-      } catch (err) {
-        console.error("Gagal ambil dosen:", err);
-        toast.error("Gagal memuat data dosen");
-      }
-    };
-
     fetchDosen();
+    fetchRelations();
   }, []);
+
+  const fetchDosen = async () => {
+    try {
+      const res = await axios.get("http://127.0.0.1:8000/dosen/all");
+      setDaftarDosen(res.data);
+    } catch (err) {
+      toast.error("Gagal memuat data dosen");
+    }
+  };
+
+  const fetchRelations = async () => {
+    try {
+      const res = await axios.get(`http://127.0.0.1:8000/relation/mahasiswa/${nim}`);
+      setRelations(res.data);
+    } catch (err) {
+      toast.error("Gagal memuat relasi dosen");
+    }
+  };
+  
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsSubmitting(true);
+
+    if (!formData.dosen_alias || !formData.role) {
+      toast.warning("Pilih dosen dan peran terlebih dahulu!");
+      return;
+    }
+
+    const payload = {
+      mahasiswa_nim: nim,
+      dosen_alias: formData.dosen_alias,
+      role: formData.role,
+    };
 
     try {
-      // Validate required fields
-      if (!formData.dosenWali || !formData.pembimbing1) {
-        toast.error("Dosen Wali dan Pembimbing 1 wajib diisi!");
-        return;
+      setLoading(true);
+      if (isEditing) {
+        await axios.put(
+          `http://127.0.0.1:8000/relation/${isEditing}`,
+          payload
+        );
+        toast.success("Data dosen berhasil diperbarui");
+      } else {
+        await axios.post("http://127.0.0.1:8000/relation/", payload);
+        toast.success("Data dosen berhasil ditambahkan");
       }
-
-      // Check for duplicate selections
-      const selectedValues = Object.values(formData).filter(Boolean);
-      if (new Set(selectedValues).size !== selectedValues.length) {
-        toast.warning("Satu dosen tidak boleh memiliki lebih dari satu peran!");
-        return;
-      }
-
-      // Save to localStorage
-      localStorage.setItem("dataDosenMahasiswa", JSON.stringify(formData));
-      
-      // Show success toast
-      toast.success("Data dosen berhasil disimpan!", {
-        position: "top-right",
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-      });
-
-      console.log("Data saved:", formData);
-    } catch (error) {
-      toast.error("Terjadi kesalahan saat menyimpan data");
-      console.error("Save error:", error);
+      setFormData({ dosen_alias: "", role: "" });
+      setIsEditing(null);
+      fetchRelations();
+    } catch (err) {
+      toast.error("Gagal menyimpan data");
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
   };
 
+  const handleDelete = async (id) => {
+    if (!confirm("Yakin ingin menghapus relasi ini?")) return;
+
+    try {
+      await axios.delete(`http://127.0.0.1:8000/relation/${id}`);
+      toast.success("Relasi berhasil dihapus");
+      fetchRelations();
+    } catch (err) {
+      toast.error("Gagal menghapus relasi");
+    }
+  };
+
+  const handleEdit = (rel) => {
+    setFormData({
+      dosen_alias: rel.dosen_alias,
+      role: Object.keys(ROLE_MAPPING).find(
+        (key) => ROLE_MAPPING[key][0] === rel.role
+      ),
+    });
+    setIsEditing(rel.id);
+  };
+
   return (
-    <div className="max-w-3xl mx-auto bg-white p-8 shadow-xl rounded-2xl mt-10">
+    <div className="max-w-4xl mx-auto p-8 bg-white shadow-xl rounded-xl mt-8">
       <div className="flex items-center gap-3 mb-6">
         <Users className="text-blue-600" />
         <h1 className="text-2xl font-bold text-blue-700">Isi Data Dosen</h1>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-5">
-        {/* Dosen Wali */}
+      <form onSubmit={handleSubmit} className="grid md:grid-cols-2 gap-4 mb-10">
         <div>
-          <label className="flex items-center gap-2 font-semibold text-gray-800 mb-1">
-            <User className="w-5 h-5" />
-            Dosen Wali <span className="text-red-500">*</span>
+          <label className="block font-semibold mb-1 text-gray-700">
+            <User className="inline w-4 h-4 mr-2" />
+            Pilih Dosen
           </label>
           <select
-            name="dosenWali"
-            value={formData.dosenWali}
+            name="dosen_alias"
+            value={formData.dosen_alias}
             onChange={handleChange}
-            required
-            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
           >
-            <option value="">Pilih Dosen Wali</option>
-            {daftarDosen.map((dosen) => (
-              <option key={dosen.id} value={dosen.name}>
-                {dosen.name}
+            <option value="">-- Pilih Dosen --</option>
+            {daftarDosen.map((d) => (
+              <option key={d.id} value={d.alias}>
+                {d.name} ({d.alias})
               </option>
             ))}
           </select>
         </div>
 
-        {/* Pembimbing 1 */}
         <div>
-          <label className="flex items-center gap-2 font-semibold text-gray-800 mb-1">
-            <Pencil className="w-5 h-5" />
-            Pembimbing 1 <span className="text-red-500">*</span>
+          <label className="block font-semibold mb-1 text-gray-700">
+            <Pencil className="inline w-4 h-4 mr-2" />
+            Pilih Peran
           </label>
           <select
-            name="pembimbing1"
-            value={formData.pembimbing1}
+            name="role"
+            value={formData.role}
             onChange={handleChange}
-            required
-            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
           >
-            <option value="">Pilih Pembimbing 1</option>
-            {daftarDosen.map((dosen) => (
-              <option key={dosen.id} value={dosen.name}>
-                {dosen.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Pembimbing 2 */}
-        <div>
-          <label className="flex items-center gap-2 font-semibold text-gray-800 mb-1">
-            <Pencil className="w-5 h-5" />
-            Pembimbing 2
-          </label>
-          <select
-            name="pembimbing2"
-            value={formData.pembimbing2}
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">Pilih Pembimbing 2</option>
-            {daftarDosen.map((dosen) => (
-              <option key={dosen.id} value={dosen.name}>
-                {dosen.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Pembimbing KP */}
-        <div>
-          <label className="flex items-center gap-2 font-semibold text-gray-800 mb-1">
-            <Pencil className="w-5 h-5" />
-            Pembimbing KP
-          </label>
-          <select
-            name="pembimbingKP"
-            value={formData.pembimbingKP}
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">Pilih Pembimbing KP</option>
-            {daftarDosen.map((dosen) => (
-              <option key={dosen.id} value={dosen.name}>
-                {dosen.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Penguji 1 */}
-        <div>
-          <label className="flex items-center gap-2 font-semibold text-gray-800 mb-1">
-            <Pencil className="w-5 h-5" />
-            Penguji 1
-          </label>
-          <select
-            name="penguji1"
-            value={formData.penguji1}
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">Pilih Penguji 1</option>
-            {daftarDosen.map((dosen) => (
-              <option key={dosen.id} value={dosen.name}>
-                {dosen.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Penguji 2 */}
-        <div>
-          <label className="flex items-center gap-2 font-semibold text-gray-800 mb-1">
-            <Pencil className="w-5 h-5" />
-            Penguji 2
-          </label>
-          <select
-            name="penguji2"
-            value={formData.penguji2}
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">Pilih Penguji 2</option>
-            {daftarDosen.map((dosen) => (
-              <option key={dosen.id} value={dosen.name}>
-                {dosen.name}
+            <option value="">-- Pilih Peran --</option>
+            {Object.entries(ROLE_MAPPING).map(([key, [label]]) => (
+              <option key={key} value={key}>
+                {label}
               </option>
             ))}
           </select>
@@ -216,29 +172,47 @@ const IsiDataDosen = () => {
 
         <button
           type="submit"
-          disabled={isSubmitting}
-          className={`flex items-center gap-2 mt-6 px-5 py-2 rounded-lg transition duration-200 ${
-            isSubmitting
+          disabled={loading}
+          className={`col-span-2 mt-4 flex items-center justify-center gap-2 px-5 py-2 font-semibold rounded-lg transition ${
+            loading
               ? "bg-gray-400 cursor-not-allowed"
-              : "bg-blue-600 text-white hover:bg-blue-700"
+              : "bg-blue-600 hover:bg-blue-700 text-white"
           }`}
         >
-          <Save className="w-5 h-5" />
-          {isSubmitting ? "Menyimpan..." : "Simpan Data Dosen"}
+          {isEditing ? <RefreshCcw className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+          {isEditing ? "Update Relasi" : "Simpan Relasi"}
         </button>
       </form>
 
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-      />
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        {relations.map((rel) => (
+          <div
+            key={rel.id}
+            className="border p-4 rounded-xl shadow hover:shadow-lg transition"
+          >
+            <h3 className="font-semibold text-blue-700 text-lg mb-2">
+              {rel.role}
+            </h3>
+            <p className="text-gray-700 mb-4">{rel.dosen_alias}</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => handleEdit(rel)}
+                className="text-green-600 hover:text-green-800"
+              >
+                <Pencil size={18} />
+              </button>
+              <button
+                onClick={() => handleDelete(rel.id)}
+                className="text-red-600 hover:text-red-800"
+              >
+                <Trash size={18} />
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <ToastContainer />
     </div>
   );
 };

@@ -1,45 +1,50 @@
-import { createContext, useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { createContext, useContext, useEffect, useState } from "react";
 
-export const AuthContext = createContext();
+const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
-    // ✅ Ambil user dari sessionStorage saat pertama kali aplikasi dimuat
-    const storedUser = sessionStorage.getItem("user");
-    return storedUser ? JSON.parse(storedUser) : null;
+    try {
+      const stored = localStorage.getItem("user");
+      return stored ? JSON.parse(stored) : null;
+    } catch (err) {
+      console.error("Error parsing user data:", err);
+      return null;
+    }
   });
 
-  const navigate = useNavigate();
+  const [token, setToken] = useState(() => {
+    return localStorage.getItem("access_token") || null;
+  });
 
-  useEffect(() => {
-    console.log("📌 Cek user di AuthContext setelah reload:", user);
-  }, [user]); // 🔍 Debugging: Pastikan user diperbarui saat reload
+  const isAuthenticated = !!user;
 
-  useEffect(() => {
-    const storedUser = sessionStorage.getItem("user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-  }, []); // 🔄 Pastikan user diperbarui dari sessionStorage saat pertama kali aplikasi dimuat
-
-  const login = (userData) => {
-    console.log("✅ Login sukses, simpan ke sessionStorage:", userData);
-    sessionStorage.setItem("user", JSON.stringify(userData));
-    setUser(userData);
-    navigate(`/${userData.role}/dashboard`);
+  const login = (data) => {
+    localStorage.setItem("access_token", data.access_token);
+    localStorage.setItem("user", JSON.stringify(data.user));
+    setUser(data.user);
+    setToken(data.access_token);
   };
 
   const logout = () => {
-    console.log("🚪 Logout: Hapus sessionStorage");
-    sessionStorage.removeItem("user");
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("user");
     setUser(null);
-    navigate("/login");
+    setToken(null);
   };
 
+  // Optional: sync saat user berubah
+  useEffect(() => {
+    if (user) {
+      localStorage.setItem("user", JSON.stringify(user));
+    }
+  }, [user]);
+
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, token, isAuthenticated, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
 };
+
+export const useAuth = () => useContext(AuthContext);

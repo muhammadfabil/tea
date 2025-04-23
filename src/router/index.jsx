@@ -1,5 +1,7 @@
 import React from "react";
 import { Routes, Route } from "react-router-dom";
+import ProtectedRoute from "../components/ProtectedRoute";
+
 
 // Halaman Umum
 import Login from "../pages/common/Login";
@@ -34,43 +36,52 @@ import AdminDosen from "../pages/admin/Dosen"; // ← perbaikan path, tadi typo 
 import AdminPelayanan from "../pages/admin/Pelayanan";
 import IsiDataDosen from "../pages/mahasiswa/IsiDataDosen";
 import LayananAdmin from "../pages/admin/LayananAdministrasi";
+import RegisterMahasiswa from "../pages/common/Register";
 
 const AppRouter = () => {
   return (
     <Routes>
-      {/* Rute untuk halaman umum */}
-      <Route path="/" element={<LandingPage />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/antrean-dosen" element={<AntreanDosen />} />
+  {/* 🌐 Halaman Umum */}
+  <Route path="/" element={<LandingPage />} />
+  <Route path="/login" element={<Login />} />
+  <Route path="/register" element={<RegisterMahasiswa />} />
+  <Route path="/antrean-dosen" element={<AntreanDosen />} />
 
-      {/* Rute untuk Mahasiswa */}
-      <Route path="/mahasiswa" element={<MahasiswaLayout />}>
-        <Route path="dashboard" element={<DashboardMahasiswa />} />
-        <Route path="isi-data-dosen" element={<IsiDataDosen />} />
-        <Route path="ajukan-layanan" element={<AjukanPelayanan />} />
-        <Route path="status-layanan" element={<StatusPelayanan />} />
-        <Route path="pilih-jadwal" element={<PilihJadwal />} />
-      </Route>
+  {/* 🎓 Rute Mahasiswa (Hanya untuk mahasiswa) */}
+  <Route element={<ProtectedRoute allowedRoles={["mahasiswa"]} />}>
+    <Route path="/mahasiswa" element={<MahasiswaLayout />}>
+      <Route path="dashboard" element={<DashboardMahasiswa />} />
+      <Route path="isi-data-dosen" element={<IsiDataDosen />} />
+      <Route path="ajukan-layanan" element={<AjukanPelayanan />} />
+      <Route path="status-layanan" element={<StatusPelayanan />} />
+      <Route path="pilih-jadwal" element={<PilihJadwal />} />
+    </Route>
+  </Route>
 
-      {/* Rute untuk Dosen */}
-      <Route path="/dosen" element={<DosenLayout />}>
-        <Route path="dashboard" element={<DashboardDosen />} />
-        <Route path="kelola-jadwal" element={<KelolaJadwal />} />
-        <Route path="daftar-mahasiswa" element={<DaftarMahasiswa />} />
-      </Route>
+  {/* 👨‍🏫 Rute Dosen (Hanya untuk dosen) */}
+  <Route element={<ProtectedRoute allowedRoles={["dosen"]} />}>
+    <Route path="/dosen" element={<DosenLayout />}>
+      <Route path="dashboard" element={<DashboardDosen />} />
+      <Route path="kelola-jadwal" element={<KelolaJadwal />} />
+      <Route path="daftar-mahasiswa" element={<DaftarMahasiswa />} />
+    </Route>
+  </Route>
 
-      {/* Rute untuk Admin */}
-      <Route path="/admin" element={<AdminLayout />}>
-        <Route path="dashboard" element={<AdminDashboard />} />
-        <Route path="mahasiswa" element={<AdminMahasiswa />} />
-        <Route path="dosen" element={<AdminDosen />} />
-        <Route path="pelayanan" element={<AdminPelayanan />} />
-        <Route path="manajemen-pelayanan" element={<LayananAdmin />} />
-      </Route>
+  {/* 🛠️ Rute Admin (Hanya untuk admin) */}
+  <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
+    <Route path="/admin" element={<AdminLayout />}>
+      <Route path="dashboard" element={<AdminDashboard />} />
+      <Route path="mahasiswa" element={<AdminMahasiswa />} />
+      <Route path="dosen" element={<AdminDosen />} />
+      <Route path="pelayanan" element={<AdminPelayanan />} />
+      <Route path="manajemen-pelayanan" element={<LayananAdmin />} />
+    </Route>
+  </Route>
 
-      {/* Rute fallback */}
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+  {/* 🔚 Rute fallback */}
+  <Route path="*" element={<NotFound />} />
+</Routes>
+
   );
 };
 

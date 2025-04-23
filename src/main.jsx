@@ -3,13 +3,18 @@ import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import "./index.css";
+
+import { AuthProvider } from "./context/AuthContext";
 import { requestNotificationPermission } from "./utils/notification";
 import { registerSW } from "virtual:pwa-register";
 
-// Request permission untuk notifikasi
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
+// Request permission notif
 requestNotificationPermission();
 
-// Register Service Worker dengan handler auto update
+// PWA SW register
 const updateSW = registerSW({
   onNeedRefresh() {
     if (confirm("Versi baru tersedia. Muat ulang sekarang?")) {
@@ -24,7 +29,10 @@ const updateSW = registerSW({
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <BrowserRouter>
-      <App />
+      <AuthProvider>
+        <App />
+        <ToastContainer position="top-right" autoClose={3000} />
+      </AuthProvider>
     </BrowserRouter>
   </React.StrictMode>
 );

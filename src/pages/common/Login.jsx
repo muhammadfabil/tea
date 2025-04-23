@@ -1,19 +1,42 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import axios from "axios";
 
 const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
+  const { login } = useAuth();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Simulasi validasi login
+
     if (!username || !password) {
       alert("Username dan Password wajib diisi!");
-    } else {
-      // Login berhasil, arahkan ke halaman Dashboard Mahasiswa
-      navigate("/mahasiswa/dashboard");
+      return;
+    }
+
+    try {
+      const response = await axios.post("http://127.0.0.1:8000/auth/login", {
+        email: username,
+        password: password,
+      });
+
+      const data = response.data;
+      login(data); // simpan ke context dan localStorage
+
+      // Redirect sesuai role
+      const role = data.user.role;
+      if (role === "admin") {
+        navigate("/admin/dashboard");
+      } else if (role === "dosen") {
+        navigate("/dosen/dashboard");
+      } else {
+        navigate("/mahasiswa/dashboard");
+      }
+    } catch (error) {
+      alert("Login gagal. Cek kembali username dan password.");
     }
   };
 

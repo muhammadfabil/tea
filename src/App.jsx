@@ -1,15 +1,12 @@
-import AppRouter from "./router/index";
-import { AuthProvider } from "./context/AuthContext";
-import PwaBadge from "./pwa/PwaBadge"; // ✅ Impor PwaBadge di sini
+import AppRouter from "./router";
+import PwaBadge from "./pwa/PwaBadge";
 
 function App() {
   return (
-    <AuthProvider>
-      <div className="bg-white min-h-screen">
-        <PwaBadge /> {/* ✅ Indikator PWA */}
-        <AppRouter />
-      </div>
-    </AuthProvider>
+    <div className="bg-white min-h-screen">
+      <PwaBadge />
+      <AppRouter />
+    </div>
   );
 }
 
