@@ -1,17 +1,22 @@
-import { Navigate, Outlet } from "react-router-dom";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 const ProtectedRoute = ({ allowedRoles }) => {
-  const { user } = useAuth();
+  const { user, isAuthenticated, loading } = useAuth();
+  const location = useLocation();
 
-  // Belum login
-  if (!user) {
-    return <Navigate to="/login" replace />;
+  // Tampilkan spinner/loading screen jika auth masih loading
+  if (loading) {
+    return <div className="flex justify-center items-center h-screen">Loading...</div>;
   }
 
-  // Role tidak sesuai
-  if (!allowedRoles.includes(user?.role)) {
-    // Arahkan ke dashboard sesuai role-nya
+  // Jika belum login, redirect ke login
+  if (!isAuthenticated || !user) {
+    return <Navigate to="/login" state={{ from: location.pathname }} replace />;
+  }
+
+  // Jika role tidak sesuai, redirect ke dashboard yang sesuai
+  if (!allowedRoles.includes(user.role)) {
     const redirectPath =
       user.role === "admin"
         ? "/admin/dashboard"
@@ -19,10 +24,11 @@ const ProtectedRoute = ({ allowedRoles }) => {
         ? "/dosen/dashboard"
         : "/mahasiswa/dashboard";
 
+    console.warn(`Access denied: role "${user.role}" tidak diizinkan. Mengarahkan ke ${redirectPath}`);
     return <Navigate to={redirectPath} replace />;
   }
 
-  // Role cocok, izinkan akses
+  // Role cocok, izinkan akses ke rute
   return <Outlet />;
 };
 

@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 
 const AntreanDosen = () => {
   const [time, setTime] = useState(new Date());
   const [dosenList, setDosenList] = useState([]);
+  const wsRef = useRef(null);
 
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
@@ -11,14 +12,16 @@ const AntreanDosen = () => {
   }, []);
 
   useEffect(() => {
+    // Fetch initial data
     const fetchDosen = async () => {
       try {
         const response = await axios.get("http://127.0.0.1:8000/dosen/all");
         const data = response.data;
 
-        // Tambahkan nomor urut berdasarkan indeks
+        // Add order number based on index
         const dosenDenganUrutan = data.map((item, index) => ({
           alias: item.alias,
+          nama: item.nama || "",
           nomorUrut: index + 1,
           hadir: item.status_kehadiran === "hadir",
         }));
@@ -30,7 +33,71 @@ const AntreanDosen = () => {
     };
 
     fetchDosen();
+
+    // Setup WebSocket connection
+    const connectWebSocket = () => {
+      wsRef.current = new WebSocket("ws://localhost:8000/ws/public");
+
+      wsRef.current.onopen = () => {
+        console.log("WebSocket connected");
+      };
+
+      wsRef.current.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          console.log("WebSocket data received:", data);
+
+          if (data && data["Inisial Dosen"]) {
+            updateDosenStatus(
+              data["Inisial Dosen"],
+              data["Status Kehadrian"] === "hadir",
+              data["Nama Dosen"]
+            );
+          }
+        } catch (error) {
+          console.error("Error parsing WebSocket data:", error);
+        }
+      };
+
+      wsRef.current.onclose = (e) => {
+        console.log("WebSocket disconnected:", e.reason);
+        // Try to reconnect after 3 seconds
+        setTimeout(() => {
+          connectWebSocket();
+        }, 3000);
+      };
+
+      wsRef.current.onerror = (error) => {
+        console.error("WebSocket error:", error);
+        wsRef.current.close();
+      };
+    };
+
+    connectWebSocket();
+
+    // Cleanup WebSocket connection on component unmount
+    return () => {
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        wsRef.current.close();
+      }
+    };
   }, []);
+
+  // Update dosen status when new WebSocket data is received
+  const updateDosenStatus = (inisial, status, nama) => {
+    setDosenList((prevList) => {
+      return prevList.map((dosen) => {
+        if (dosen.alias === inisial) {
+          return {
+            ...dosen,
+            hadir: status,
+            nama: nama || dosen.nama,
+          };
+        }
+        return dosen;
+      });
+    });
+  };
 
   const formatTime = (date) =>
     date.toLocaleTimeString("id-ID", { hour12: true });
@@ -67,6 +134,11 @@ const AntreanDosen = () => {
               <div className="text-4xl font-black mb-1 tracking-wide">
                 {dosen.alias}
               </div>
+              {dosen.nama && (
+                <div className="text-sm text-center mb-2 text-white/90 line-clamp-1">
+                  {dosen.nama}
+                </div>
+              )}
               {dosen.hadir ? (
                 <div className="text-lg mb-3 font-medium text-white/90">{`#${dosen.nomorUrut}`}</div>
               ) : (
@@ -89,6 +161,6 @@ const AntreanDosen = () => {
       </div>
     </div>
   );
-};  
+};
 
 export default AntreanDosen;

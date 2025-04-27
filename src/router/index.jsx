@@ -37,6 +37,7 @@ import AdminPelayanan from "../pages/admin/Pelayanan";
 import IsiDataDosen from "../pages/mahasiswa/IsiDataDosen";
 import LayananAdmin from "../pages/admin/LayananAdministrasi";
 import RegisterMahasiswa from "../pages/common/Register";
+import ListAdmin from "../pages/admin/ListAdmin";
 
 const AppRouter = () => {
   return (
@@ -75,6 +76,7 @@ const AppRouter = () => {
       <Route path="dosen" element={<AdminDosen />} />
       <Route path="pelayanan" element={<AdminPelayanan />} />
       <Route path="manajemen-pelayanan" element={<LayananAdmin />} />
+      <Route path="list-admin" element={<ListAdmin/>} />
     </Route>
   </Route>
 

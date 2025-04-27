@@ -22,8 +22,9 @@ const ROLE_MAPPING = {
 };
 
 const IsiDataDosen = () => {
-  const user = JSON.parse(localStorage.getItem("user"));
-  const nim = user?.profile?.nim;
+  const auth = JSON.parse(localStorage.getItem("auth"));
+const nim = auth?.user?.profile?.nim;
+
 
   const [daftarDosen, setDaftarDosen] = useState([]);
   const [relations, setRelations] = useState([]);
@@ -58,6 +59,8 @@ const IsiDataDosen = () => {
     }
   };
   
+  
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;
