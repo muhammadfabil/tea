@@ -1,6 +1,6 @@
 // TEMP for manual testing
-localStorage.setItem('user_id', '3b846fb1-8e70-494d-a199-35639d124835');
-localStorage.setItem('access_token', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIzYjg0NmZiMS04ZTcwLTQ5NGQtYTE5OS0zNTYzOWQxMjQ4MzUiLCJyb2xlIjoibWFoYXNpc3dhIiwiZXhwIjoxNzQ1ODA5NjMyfQ.zmMslf-bG1q3n4mIC-4OD8bAv1NRSdxMyf2V2NQuXUY');
+localStorage.setItem('user_id', '98feb9e7-21ee-477c-8d5b-df5496aa91b9');
+localStorage.setItem('access_token', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5OGZlYjllNy0yMWVlLTQ3N2MtOGQ1Yi1kZjU0OTZhYTkxYjkiLCJyb2xlIjoibWFoYXNpc3dhIiwiZXhwIjoxNzQ1ODExNTk4fQ.5Fl3JO3UAUJgGbpHTjTYNYndqVr1Wbu1cIJ8aFzbEAE');
 
 // Service worker registration and push notification handling
 let swRegistration = null;

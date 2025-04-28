@@ -5,6 +5,7 @@ self.addEventListener("install", (event) => {
       return cache.addAll(["/", "/index.html"]);
     })
   );
+  self.skipWaiting(); // <-- langsung aktif setelah install
 });
 
 self.addEventListener("activate", (event) => {
@@ -21,76 +22,40 @@ self.addEventListener("activate", (event) => {
       );
     })
   );
+  self.clients.claim(); // <-- langsung ambil kontrol semua tab
 });
 
 self.addEventListener("fetch", (event) => {
-  // Exclude the service worker file itself
-  if (event.request.url.includes("/sw.js")) {
-    return;
-  }
-
-  // Let API requests pass through without caching
-  if (event.request.url.includes("/api/")) {
-    return;
-  }
-
-  // Handle static assets
-  if (event.request.method === "GET" && event.request.destination !== "document") {
-    event.respondWith(
-      caches.match(event.request).then((cachedResponse) => {
-        return cachedResponse || fetch(event.request);
-      })
-    );
-  }
-});
-
-// Handle Push Notification
-self.addEventListener("push", (event) => {
-  console.log("Push notification received");
-
-  let notificationData;
-  try {
-    notificationData = event.data ? event.data.json() : {};
-    console.log("Push data:", notificationData);
-  } catch (error) {
-    console.error("Error parsing push data:", error);
-    notificationData = {
-      title: "New Notification",
-      body: "You have a new notification",
-    };
-  }
-
-  const options = {
-    body: notificationData.body || "You have a new notification",
-    icon: "/icon-192x192.png",
-    badge: "/icon-192x192.png",
-    data: notificationData.data || {},
-    requireInteraction: true,
-    vibrate: [100, 50, 100],
-  };
-
-  event.waitUntil(
-    self.registration.showNotification(notificationData.title || "Notification", options)
+  event.respondWith(
+    fetch(event.request).catch(() => caches.match(event.request))
   );
 });
 
-// Handle Notification Click
-self.addEventListener("notificationclick", (event) => {
-  console.log("Notification clicked:", event);
-  event.notification.close();
+// Handler Push Notification
+self.addEventListener("push", (event) => {
+  console.log("Push event received:", event);
 
-  const url = event.notification.data?.url || "/mahasiswa/dashboard";
+  const data = event.data ? event.data.json() : {};
+
+  const title = data.title || "Notifikasi Baru";
+  const options = {
+    body: data.body || "Anda memiliki notifikasi baru.",
+    icon: "/pwa-192x192.png", // pastikan ikon ini ada!
+    badge: "/pwa-192x192.png", // opsional
+    data: {
+      url: data.url || "/" // buat nanti di notificationclick
+    }
+  };
 
   event.waitUntil(
-    clients.matchAll({ type: "window" }).then((windowClients) => {
-      for (let client of windowClients) {
-        if (client.url === url && "focus" in client) {
-          return client.focus();
-        }
-      }
-      if (clients.openWindow) {
-        return clients.openWindow(url);
-      }
-    })
+    self.registration.showNotification(title, options)
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  console.log('Notification click received.');
+  event.notification.close();
+  event.waitUntil(
+    clients.openWindow(event.notification.data.url || '/')
   );
 });
