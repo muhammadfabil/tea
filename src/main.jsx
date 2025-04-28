@@ -5,26 +5,13 @@ import App from "./App";
 import "./index.css";
 
 import { AuthProvider } from "./context/AuthContext";
-
-import { registerSW } from "virtual:pwa-register";
+import { registerServiceWorker } from "./registerServiceWorker"; // <- GANTI INI
 
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-// Request permission notif
-
-
-// PWA SW register
-const updateSW = registerSW({
-  onNeedRefresh() {
-    if (confirm("Versi baru tersedia. Muat ulang sekarang?")) {
-      updateSW(true);
-    }
-  },
-  onOfflineReady() {
-    console.log("Aplikasi siap digunakan offline.");
-  },
-});
+// Register Service Worker manual
+registerServiceWorker();
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>

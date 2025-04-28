@@ -7,8 +7,8 @@ let swRegistration = null;
 let subscription = null;
 
 // Get userId and token (assuming saved from login)
-const userId = localStorage.getItem('user_id'); // Example: 'ae7ef4bf-e7e3-4148-957e-81f927313bb3'
-const accessToken = localStorage.getItem('access_token'); // Example: 'your-jwt-token'
+const userId = localStorage.getItem('user_id');
+const accessToken = localStorage.getItem('access_token');
 
 // Show notification to user
 function showNotification(message, isError = false) {
@@ -70,7 +70,7 @@ async function registerServiceWorker() {
 async function subscribeToPushNotifications() {
   try {
     const permission = await Notification.requestPermission();
-    if (permission !== 'granted'){
+    if (permission !== 'granted') {
       showNotification('Notification Permission Denied', true);
       return;
     }
@@ -120,10 +120,9 @@ async function saveSubscriptionToServer(subscription) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}`, // Send token in the header
+        'Authorization': `Bearer ${accessToken}`,
       },
       body: JSON.stringify({
-        // user_id: userId, // Include user_id in the request body
         endpoint: subscriptionObject.endpoint,
         keys: {
           p256dh: subscriptionObject.keys.p256dh,
@@ -155,12 +154,13 @@ async function requestPushNotification() {
     const response = await fetch('http://127.0.0.1:8000/wp/push/send', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`,
       },
       body: JSON.stringify({
         title: "Hello World!",
         body: "This is a Test Push Notification",
-        url: "simantap.ifitera@gmail.com"
+        url: "https://your-website.com"
       })
     });
 
