@@ -5,14 +5,14 @@ import App from "./App";
 import "./index.css";
 
 import { AuthProvider } from "./context/AuthContext";
-import { requestNotificationPermission } from "./utils/notification";
+
 import { registerSW } from "virtual:pwa-register";
 
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 // Request permission notif
-requestNotificationPermission();
+
 
 // PWA SW register
 const updateSW = registerSW({

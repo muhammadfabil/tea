@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { toast } from "react-toastify";
 import { 
   Calendar, 
@@ -19,7 +19,9 @@ import {
   Play,
   Download,
   Maximize,
-  Minimize
+  Minimize,
+  Wifi,
+  WifiOff
 } from "lucide-react";
 
 const KelolaWaktuBimbingan = () => {
@@ -35,6 +37,8 @@ const KelolaWaktuBimbingan = () => {
   const [processingAntrianId, setProcessingAntrianId] = useState(null);
   const [previewFile, setPreviewFile] = useState(null);
   const [isPreviewFullscreen, setIsPreviewFullscreen] = useState(false);
+  const socketRef = useRef(null);
+  const [socketConnected, setSocketConnected] = useState(false);
 
   const initialFormData = {
     jumlah_antrian: 0,
@@ -46,6 +50,128 @@ const KelolaWaktuBimbingan = () => {
   };
 
   const [formData, setFormData] = useState(initialFormData);
+
+  // Fungsi untuk update status antrian secara real-time
+  const updateAntrianStatus = useCallback((data) => {
+    const { inisial, waktu_id, queue } = data;
+    
+    if (!waktu_id || !queue || !queue.length) return;
+    
+    // Update jadwalList
+    setJadwalList(prevList => {
+      const updatedList = [...prevList];
+      const jadwalIndex = updatedList.findIndex(jadwal => jadwal.bimbingan_id === waktu_id);
+      
+      if (jadwalIndex !== -1) {
+        // Update the status of each antrian based on the queue data
+        if (updatedList[jadwalIndex].antrian_bimbingan) {
+          updatedList[jadwalIndex].antrian_bimbingan = 
+            updatedList[jadwalIndex].antrian_bimbingan.map(antrian => {
+              // Find matching antrian in the queue
+              const queueItem = queue.find(q => q.id_antrian === antrian.id_antrian);
+              
+              if (queueItem) {
+                return {
+                  ...antrian,
+                  status_antrian: queueItem.status
+                };
+              }
+              return antrian;
+            });
+        }
+      }
+      
+      return updatedList;
+    });
+    
+    // Update selectedJadwal jika sedang melihat detail
+    if (selectedJadwal && selectedJadwal.bimbingan_id === waktu_id) {
+      setSelectedJadwal(prevJadwal => {
+        if (!prevJadwal || !prevJadwal.antrian_bimbingan) return prevJadwal;
+        
+        const updatedAntrian = prevJadwal.antrian_bimbingan.map(antrian => {
+          const queueItem = queue.find(q => q.id_antrian === antrian.id_antrian);
+          if (queueItem) {
+            return { ...antrian, status_antrian: queueItem.status };
+          }
+          return antrian;
+        });
+        
+        return { ...prevJadwal, antrian_bimbingan: updatedAntrian };
+      });
+    }
+  }, [selectedJadwal]);
+
+  // Setup WebSocket connection
+  useEffect(() => {
+    if (!userData?.user?.profile?.alias) return;
+    
+    const token = userData?.token;
+    if (!token) return;
+    
+    // Create WebSocket connection with correct endpoint
+    socketRef.current = new WebSocket(`ws://localhost:8000/ws?token=${token}`);
+    
+    // Connection opened
+    socketRef.current.addEventListener('open', (event) => {
+      console.log('✅ WebSocket connected');
+      setSocketConnected(true);
+    });
+    
+    // Listen for messages
+    socketRef.current.addEventListener('message', (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        
+        // Handle different event types
+        switch (data.event) {
+          case 'update_antrian':
+            updateAntrianStatus(data);
+            toast.info(`Status antrian untuk jadwal #${data.waktu_id} telah diperbarui`);
+            break;
+          case 'new_antrian':
+            // Refresh jadwal list when a new antrian is created
+            if (userData?.user?.profile?.alias) {
+              fetchJadwalBimbingan(userData.user.profile.alias);
+              toast.info(`Mahasiswa baru telah mengambil antrian pada jadwal #${data.waktu_id}`);
+            }
+            break;
+          default:
+            console.log('Received unknown event:', data.event);
+        }
+      } catch (err) {
+        console.error('Error parsing WebSocket message:', err);
+      }
+    });
+    
+    // Connection closed or error
+    socketRef.current.addEventListener('close', (event) => {
+      console.log('❌ WebSocket connection closed');
+      setSocketConnected(false);
+      
+      // Attempt to reconnect after 5 seconds
+      setTimeout(() => {
+        if (socketRef.current?.readyState === WebSocket.CLOSED) {
+          console.log('🔄 Attempting to reconnect WebSocket...');
+          // Recursively call this effect to attempt reconnection
+          socketRef.current = null;
+        }
+      }, 5000);
+    });
+    
+    socketRef.current.addEventListener('error', (error) => {
+      console.error('WebSocket error:', error);
+      setSocketConnected(false);
+    });
+    
+    // Clean up on unmount
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.close();
+        socketRef.current = null;
+      }
+    };
+  }, [userData, updateAntrianStatus]);
 
   useEffect(() => {
     const authData = localStorage.getItem("auth");
@@ -224,7 +350,10 @@ const KelolaWaktuBimbingan = () => {
     setProcessingAntrianId(antrianId);
     
     try {
-      const response = await fetch(`http://127.0.0.1:8000/antrian/f/${antrianId}`, {
+      // Tetap gunakan endpoint yang sama
+      const endpoint = `http://127.0.0.1:8000/antrian/f/${antrianId}`;
+      
+      const response = await fetch(endpoint, {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${userData.token}`,
@@ -232,38 +361,19 @@ const KelolaWaktuBimbingan = () => {
       });
 
       if (response.ok) {
-        const result = await response.json();
-        
-        // Menentukan status baru berdasarkan action
-        let newStatus = "";
+        // Toast pesan sesuai aksi
         if (statusAction === "p") {
-          newStatus = "Sedang Bimbingan";
-          toast.success("Status berhasil diubah menjadi Sedang Bimbingan");
+          toast.success("Status berhasil diubah menjadi Dalam Bimbingan");
         } else if (statusAction === "f") {
-          newStatus = "Selesai";
           toast.success("Status berhasil diubah menjadi Selesai");
         }
-
-        // Update state untuk mencerminkan perubahan status antrian
-        const updatedJadwal = { ...selectedJadwal };
-        updatedJadwal.antrian_bimbingan = updatedJadwal.antrian_bimbingan.map(antrian => {
-          if (antrian.id_antrian === antrianId) {
-            return { ...antrian, status_antrian: newStatus };
-          }
-          return antrian;
-        });
-
-        setSelectedJadwal(updatedJadwal);
         
-        // Update jadwalList juga
-        const updatedList = jadwalList.map(jadwal => {
-          if (jadwal.bimbingan_id === selectedJadwal.bimbingan_id) {
-            return updatedJadwal;
+        // Beri sedikit waktu sebelum memperbarui UI lagi (opsional)
+        setTimeout(() => {
+          if (userData?.user?.profile?.alias) {
+            fetchJadwalBimbingan(userData.user.profile.alias);
           }
-          return jadwal;
-        });
-        
-        setJadwalList(updatedList);
+        }, 500);
       } else {
         const errorData = await response.json();
         toast.error(errorData.message || "Gagal mengubah status antrian");
@@ -389,7 +499,7 @@ const KelolaWaktuBimbingan = () => {
     let bgColor, textColor, icon;
     
     switch(status) {
-      case "Sedang Bimbingan":
+      case "Dalam Bimbingan":
         bgColor = "bg-blue-100";
         textColor = "text-blue-800";
         icon = <Play className="mr-1 text-blue-600" size={14} />;
@@ -419,12 +529,27 @@ const KelolaWaktuBimbingan = () => {
     <div className="max-w-6xl mx-auto p-6">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-gray-800">Kelola Jadwal Bimbingan</h1>
-        <button
-          onClick={openAddModal}
-          className="bg-blue-600 hover:bg-blue-700 transition-colors duration-300 text-white px-5 py-2.5 rounded-lg shadow-md flex items-center gap-2"
-        >
-          <Plus size={18} /> Tambah Jadwal
-        </button>
+        <div className="flex items-center gap-4">
+          <div className={`flex items-center ${socketConnected ? 'text-green-600' : 'text-gray-400'}`}>
+            {socketConnected ? (
+              <>
+                <Wifi size={16} className="mr-1" />
+                <span className="text-xs">Realtime aktif</span>
+              </>
+            ) : (
+              <>
+                <WifiOff size={16} className="mr-1" />
+                <span className="text-xs">Menghubungkan...</span>
+              </>
+            )}
+          </div>
+          <button
+            onClick={openAddModal}
+            className="bg-blue-600 hover:bg-blue-700 transition-colors duration-300 text-white px-5 py-2.5 rounded-lg shadow-md flex items-center gap-2"
+          >
+            <Plus size={18} /> Tambah Jadwal
+          </button>
+        </div>
       </div>
 
       {/* Jadwal Bimbingan */}
@@ -453,7 +578,9 @@ const KelolaWaktuBimbingan = () => {
                   
                   <div className="flex items-center gap-2">
                     <Users className="text-gray-500" size={16} />
-                    <span className="text-gray-700">Kuota: {jadwal.jumlah_antrian}</span>
+                    <span className="text-gray-700">
+                      <span className="font-medium text-blue-600">{jadwal.antrian_bimbingan?.length || 0}</span>/{jadwal.jumlah_antrian} Mahasiswa
+                    </span>
                   </div>
                   
                   <div className="flex items-center gap-2">
@@ -483,6 +610,34 @@ const KelolaWaktuBimbingan = () => {
                     <Edit3 size={16} /> Edit
                   </button>
                 </div>
+                
+                {jadwal.antrian_bimbingan && jadwal.antrian_bimbingan.length > 0 && (
+                  <div className="mt-3 pt-3 border-t border-gray-100">
+                    <p className="text-xs text-gray-500 mb-2">Status Antrian:</p>
+                    <div className="flex flex-wrap gap-1">
+                      {jadwal.antrian_bimbingan.filter(antrian => antrian.status_antrian === "Menunggu").length > 0 && (
+                        <span className="px-2 py-0.5 bg-yellow-100 text-yellow-800 text-xs rounded-full flex items-center">
+                          <Clock size={10} className="mr-1" />
+                          {jadwal.antrian_bimbingan.filter(antrian => antrian.status_antrian === "Menunggu").length} Menunggu
+                        </span>
+                      )}
+                      
+                      {jadwal.antrian_bimbingan.filter(antrian => antrian.status_antrian === "Dalam Bimbingan").length > 0 && (
+                        <span className="px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded-full flex items-center">
+                          <Play size={10} className="mr-1" />
+                          {jadwal.antrian_bimbingan.filter(antrian => antrian.status_antrian === "Dalam Bimbingan").length} Proses
+                        </span>
+                      )}
+                      
+                      {jadwal.antrian_bimbingan.filter(antrian => antrian.status_antrian === "Selesai").length > 0 && (
+                        <span className="px-2 py-0.5 bg-green-100 text-green-800 text-xs rounded-full flex items-center">
+                          <CheckCircle size={10} className="mr-1" />
+                          {jadwal.antrian_bimbingan.filter(antrian => antrian.status_antrian === "Selesai").length} Selesai
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           ))
@@ -502,7 +657,7 @@ const KelolaWaktuBimbingan = () => {
 
       {/* Modal Detail Jadwal */}
       {isDetailModalOpen && selectedJadwal && (
-        <div className="fixed inset-0 bg-none bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl p-6 relative animate-fadeIn overflow-y-auto max-h-[90vh]">
             {/* Header Modal */}
             <div className="flex justify-between items-center pb-4 border-b border-gray-200 mb-6">
@@ -595,10 +750,26 @@ const KelolaWaktuBimbingan = () => {
 
             {/* Daftar Mahasiswa */}
             <div className="border-t border-gray-200 pt-6">
-              <h3 className="text-xl font-semibold mb-4 flex items-center">
-                <Users className="mr-2 text-blue-600" size={20} />
-                Daftar Antrian Mahasiswa
-              </h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-semibold flex items-center">
+                  <Users className="mr-2 text-blue-600" size={20} />
+                  Daftar Antrian Mahasiswa
+                </h3>
+                
+                <div className={`flex items-center ${socketConnected ? 'text-green-600' : 'text-gray-400'}`}>
+                  {socketConnected ? (
+                    <>
+                      <Wifi size={16} className="mr-1" />
+                      <span className="text-xs">Realtime aktif</span>
+                    </>
+                  ) : (
+                    <>
+                      <WifiOff size={16} className="mr-1" />
+                      <span className="text-xs">Menghubungkan...</span>
+                    </>
+                  )}
+                </div>
+              </div>
               
               {selectedJadwal.antrian_bimbingan && selectedJadwal.antrian_bimbingan.length > 0 ? (
                 <div className="overflow-x-auto">
@@ -654,7 +825,7 @@ const KelolaWaktuBimbingan = () => {
                                 <button 
                                   className="px-3 py-1 rounded text-white bg-blue-600 hover:bg-blue-700 flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
                                   disabled={processingAntrian}
-                                  onClick={() => handleUpdateAntrianStatus(antrian.id_antrian, "p")}
+                                  onClick={() => handleUpdateAntrianStatus(antrian.id_antrian)}
                                 >
                                   {processingAntrian && processingAntrianId === antrian.id_antrian ? (
                                     "Proses..."
@@ -666,11 +837,11 @@ const KelolaWaktuBimbingan = () => {
                                 </button>
                               )}
                               
-                              {antrian.status_antrian === "Sedang Bimbingan" && (
+                              {antrian.status_antrian === "Dalam Bimbingan" && (
                                 <button 
                                   className="px-3 py-1 rounded text-white bg-green-600 hover:bg-green-700 flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
                                   disabled={processingAntrian}
-                                  onClick={() => handleUpdateAntrianStatus(antrian.id_antrian, "f")}
+                                  onClick={() => handleUpdateAntrianStatus(antrian.id_antrian)}
                                 >
                                   {processingAntrian && processingAntrianId === antrian.id_antrian ? (
                                     "Proses..."
@@ -729,7 +900,7 @@ const KelolaWaktuBimbingan = () => {
 
       {/* Modal Tambah/Edit Jadwal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-none bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 relative animate-fadeIn">
             <button 
               onClick={() => setIsModalOpen(false)}
@@ -876,7 +1047,7 @@ const KelolaWaktuBimbingan = () => {
                   >
                     {loading ? (
                       <>Menyimpan...</>
-                    ) : (
+                    ) : ( 
                       <>
                         <Save size={16} /> Simpan
                       </>
@@ -891,7 +1062,7 @@ const KelolaWaktuBimbingan = () => {
 
       {/* Modal Preview File */}
       {previewFile && (
-        <div className={`fixed inset-0 bg-none backdrop-blur-sm bg-opacity-75 flex items-center justify-center z-[60] ${isPreviewFullscreen ? 'p-0' : 'p-8'}`}>
+        <div className={`fixed inset-0 bg-black backdrop-blur-sm bg-opacity-75 flex items-center justify-center z-[60] ${isPreviewFullscreen ? 'p-0' : 'p-8'}`}>
           <div className={`bg-white rounded-lg shadow-2xl relative animate-fadeIn ${isPreviewFullscreen ? 'w-full h-full rounded-none' : 'w-full max-w-5xl max-h-[90vh]'}`}>
             {/* Header */}
             <div className="flex justify-between items-center p-4 border-b border-gray-200">

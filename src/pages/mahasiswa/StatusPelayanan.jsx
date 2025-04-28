@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import axios from "axios";
 import { toast, ToastContainer } from "react-toastify";
-import { FileText, FileCheck, CircleCheck, Clock, Info, Calendar, MessageSquare, File } from "lucide-react";
+import { FileText, FileCheck, CircleCheck, Clock, Info, Calendar, MessageSquare, File, Wifi, WifiOff } from "lucide-react";
 import "react-toastify/dist/ReactToastify.css";
 
 const StatusPelayanan = () => {
@@ -10,6 +10,166 @@ const StatusPelayanan = () => {
   const [selectedPengajuan, setSelectedPengajuan] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [mahasiswaNama, setMahasiswaNama] = useState({});
+  const socketRef = useRef(null);
+  const [socketConnected, setSocketConnected] = useState(false);
+
+  // Function to update service status in real-time
+    // Function to update service status in real-time
+  const updateLayananStatus = useCallback((data) => {
+    // Define getJenisLayananName inside the callback to avoid undefined references
+    const getJenisLayananName = (id) => {
+      const jenisLayanan = {
+        1: "Surat Keterangan Aktif",
+        2: "Transkrip Nilai",
+        3: "Legalisir Ijazah",
+        4: "Surat Rekomendasi",
+        5: "Surat Keterangan Lulus"
+      };
+      
+      return jenisLayanan[id] || `Layanan #${id}`;
+    };
+  
+    // Make sure all expected fields are available
+    const { id, status, catatan_admin, jadwal_pengambilan } = data;
+    
+    if (!id || !status) {
+      console.log("Received incomplete data:", data);
+      return;
+    }
+    
+    console.log("Processing status update for layanan ID:", id, "New status:", status);
+    
+    // Update the list of pengajuan
+    setPengajuanList(prevList => {
+      // Check if this pengajuan exists in our list
+      const pengajuanExists = prevList.some(p => p.id === id);
+      
+      if (!pengajuanExists) {
+        console.log("Pengajuan not found in current list, may need to refresh");
+        // Consider fetching fresh data here
+        return prevList;
+      }
+      
+      const updatedList = prevList.map(pengajuan => {
+        if (pengajuan.id === id) {
+          console.log("Updating pengajuan in list:", pengajuan.id);
+          
+          // Show notification about status change
+          toast.info(`Status pengajuan ${getJenisLayananName(pengajuan.jenis_layanan_id)} berubah menjadi: ${status}`);
+          
+          // Return updated pengajuan
+          return {
+            ...pengajuan,
+            status,
+            catatan_admin: catatan_admin !== undefined ? catatan_admin : pengajuan.catatan_admin,
+            jadwal_pengambilan: jadwal_pengambilan !== undefined ? jadwal_pengambilan : pengajuan.jadwal_pengambilan
+          };
+        }
+        return pengajuan;
+      });
+      
+      return updatedList;
+    });
+    
+    // Update selected pengajuan if it's currently open in modal
+    if (selectedPengajuan && selectedPengajuan.id === id) {
+      console.log("Updating selected pengajuan in modal");
+      setSelectedPengajuan(prev => ({
+        ...prev,
+        status,
+        catatan_admin: catatan_admin !== undefined ? catatan_admin : prev.catatan_admin,
+        jadwal_pengambilan: jadwal_pengambilan !== undefined ? jadwal_pengambilan : prev.jadwal_pengambilan
+      }));
+    }
+  }, [selectedPengajuan]);
+  
+  // Setup WebSocket connection
+  useEffect(() => {
+    const getAuthData = () => {
+      const authData = JSON.parse(localStorage.getItem("auth"));
+      return {
+        token: authData?.token,
+        nim: authData?.user?.profile?.nim
+      };
+    };
+    
+    const { token, nim } = getAuthData();
+    
+    if (!token || !nim) {
+      console.log("No token or NIM found, cannot connect to WebSocket");
+      return;
+    }
+    
+    // Create WebSocket connection
+    const ws = new WebSocket(`ws://localhost:8000/ws?token=${token}`);
+    socketRef.current = ws;
+    
+    // Connection opened
+    ws.addEventListener('open', (event) => {
+      console.log('✅ WebSocket connected for layanan updates');
+      setSocketConnected(true);
+    });
+    
+    // Listen for messages
+    ws.addEventListener('message', (event) => {
+      try {
+        console.log("Raw WebSocket message:", event.data);
+        const data = JSON.parse(event.data);
+        console.log("Parsed WebSocket message:", data);
+        
+        // Direct data format (no event wrapper)
+        if (data.id && data.status && data.mahasiswa_nim) {
+          if (data.mahasiswa_nim === nim) {
+            console.log("Processing direct layanan update");
+            updateLayananStatus(data);
+          }
+          return;
+        }
+        
+        // Event-wrapped format
+        if (data.event === 'update_layanan') {
+          if (data.mahasiswa_nim === nim) {
+            console.log("Processing event-based layanan update");
+            updateLayananStatus(data);
+          }
+          return;
+        }
+        
+        console.log('Received message in unknown format:', data);
+        
+      } catch (err) {
+        console.error('Error parsing WebSocket message:', err);
+      }
+    });
+    
+    // Connection closed or error
+    ws.addEventListener('close', (event) => {
+      console.log('❌ WebSocket connection closed, code:', event.code, 'reason:', event.reason);
+      setSocketConnected(false);
+      
+      // Attempt to reconnect after 5 seconds
+      setTimeout(() => {
+        if (socketRef.current?.readyState === WebSocket.CLOSED) {
+          console.log('🔄 Attempting to reconnect WebSocket...');
+          socketRef.current = null;
+        }
+      }, 5000);
+    });
+    
+    ws.addEventListener('error', (error) => {
+      console.error('WebSocket error:', error);
+      setSocketConnected(false);
+    });
+    
+    // Clean up on unmount
+    return () => {
+      console.log("Cleaning up WebSocket connection");
+      if (socketRef.current) {
+        socketRef.current.close(1000, "Component unmounting");
+        socketRef.current = null;
+      }
+    };
+  }, [updateLayananStatus]);
 
   useEffect(() => {
     fetchPengajuanData();
@@ -148,9 +308,24 @@ const StatusPelayanan = () => {
 
   return (
     <div className="p-4 md:p-8 max-w-6xl mx-auto bg-white text-gray-800">
-      <h1 className="text-2xl font-bold text-blue-600 mb-6">
-        Status Pengajuan Layanan
-      </h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold text-blue-600">
+          Status Pengajuan Layanan
+        </h1>
+        <div className={`flex items-center ${socketConnected ? 'text-green-600' : 'text-gray-400'}`}>
+          {socketConnected ? (
+            <>
+              <Wifi size={16} className="mr-1" />
+              <span className="text-xs">Realtime aktif</span>
+            </>
+          ) : (
+            <>
+              <WifiOff size={16} className="mr-1" />
+              <span className="text-xs">Menghubungkan...</span>
+            </>
+          )}
+        </div>
+      </div>
 
       {loading ? (
         <div className="text-center py-10">

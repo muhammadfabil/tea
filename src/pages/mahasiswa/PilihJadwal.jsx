@@ -1,6 +1,9 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { toast } from 'react-toastify';
-import { Calendar, Clock, MapPin, FileText, Users, X, Upload, Check, AlertCircle, Wifi, WifiOff } from 'lucide-react';
+import { 
+  Calendar, Clock, MapPin, FileText, Users, X, Upload, Check, AlertCircle, 
+  Wifi, WifiOff, Eye, CheckCircle, Play, Download, Bell, ChevronRight, FileCheck
+} from 'lucide-react';
 
 const JadwalBimbinganMahasiswa = () => {
   const [jadwalByDosen, setJadwalByDosen] = useState([]);
@@ -13,6 +16,10 @@ const JadwalBimbinganMahasiswa = () => {
   const fileInputRef = useRef(null);
   const socketRef = useRef(null);
   const [socketConnected, setSocketConnected] = useState(false);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [selectedAntrianDetail, setSelectedAntrianDetail] = useState(null);
+  const [processingAntrian, setProcessingAntrian] = useState(false);
+  const [processingAntrianId, setProcessingAntrianId] = useState(null);
   
   // State untuk modal konfirmasi
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -62,77 +69,75 @@ const JadwalBimbinganMahasiswa = () => {
   }, []);
 
   // Setup WebSocket connection
-    // Setup WebSocket connection
-    useEffect(() => {
-      if (!nimMahasiswa) return;
-      
-      const authData = localStorage.getItem("auth");
-      const token = authData ? JSON.parse(authData).token : null;
-
-      
-      if (!token) return;
-      
-      // Create WebSocket connection with correct endpoint
-      socketRef.current = new WebSocket(`ws://localhost:8000/ws?token=${token}`);
-      
-      // Connection opened
-      socketRef.current.addEventListener('open', (event) => {
-        console.log('✅ WebSocket connected');
-        setSocketConnected(true);
-      });
-      
-      // Listen for messages
-      socketRef.current.addEventListener('message', (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          
-          // Handle different event types
-          switch (data.event) {
-            case 'update_antrian':
-              updateAntrianStatus(data);
-              // Show notification if user is in the queue that was updated
-              const isUserInQueue = data.queue.some(q => q.nim === nimMahasiswa);
-              if (isUserInQueue) {
-                const status = data.queue.find(q => q.nim === nimMahasiswa).status;
-                toast.info(`Status antrian Anda telah diperbarui menjadi: ${status}`);
-              }
-              break;
-            default:
-              console.log('Received unknown event:', data.event);
-          }
-        } catch (err) {
-          console.error('Error parsing WebSocket message:', err);
-        }
-      });
-      
-      // Connection closed or error
-      socketRef.current.addEventListener('close', (event) => {
-        console.log('❌ WebSocket connection closed');
-        setSocketConnected(false);
+  useEffect(() => {
+    if (!nimMahasiswa) return;
+    
+    const authData = localStorage.getItem("auth");
+    const token = authData ? JSON.parse(authData).token : null;
+    
+    if (!token) return;
+    
+    // Create WebSocket connection with correct endpoint
+    socketRef.current = new WebSocket(`ws://localhost:8000/ws?token=${token}`);
+    
+    // Connection opened
+    socketRef.current.addEventListener('open', (event) => {
+      console.log('✅ WebSocket connected');
+      setSocketConnected(true);
+    });
+    
+    // Listen for messages
+    socketRef.current.addEventListener('message', (event) => {
+      try {
+        const data = JSON.parse(event.data);
         
-        // Attempt to reconnect after 5 seconds
-        setTimeout(() => {
-          if (socketRef.current?.readyState === WebSocket.CLOSED) {
-            console.log('🔄 Attempting to reconnect WebSocket...');
-            // Recursively call this effect to attempt reconnection
-            socketRef.current = null;
-          }
-        }, 5000);
-      });
+        // Handle different event types
+        switch (data.event) {
+          case 'update_antrian':
+            updateAntrianStatus(data);
+            // Show notification if user is in the queue that was updated
+            const isUserInQueue = data.queue.some(q => q.nim === nimMahasiswa);
+            if (isUserInQueue) {
+              const status = data.queue.find(q => q.nim === nimMahasiswa).status;
+              toast.info(`Status antrian Anda telah diperbarui menjadi: ${status}`);
+            }
+            break;
+          default:
+            console.log('Received unknown event:', data.event);
+        }
+      } catch (err) {
+        console.error('Error parsing WebSocket message:', err);
+      }
+    });
+    
+    // Connection closed or error
+    socketRef.current.addEventListener('close', (event) => {
+      console.log('❌ WebSocket connection closed');
+      setSocketConnected(false);
       
-      socketRef.current.addEventListener('error', (error) => {
-        console.error('WebSocket error:', error);
-        setSocketConnected(false);
-      });
-      
-      // Clean up on unmount
-      return () => {
-        if (socketRef.current) {
-          socketRef.current.close();
+      // Attempt to reconnect after 5 seconds
+      setTimeout(() => {
+        if (socketRef.current?.readyState === WebSocket.CLOSED) {
+          console.log('🔄 Attempting to reconnect WebSocket...');
+          // Recursively call this effect to attempt reconnection
           socketRef.current = null;
         }
-      };
-    }, [nimMahasiswa, updateAntrianStatus]);
+      }, 5000);
+    });
+    
+    socketRef.current.addEventListener('error', (error) => {
+      console.error('WebSocket error:', error);
+      setSocketConnected(false);
+    });
+    
+    // Clean up on unmount
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.close();
+        socketRef.current = null;
+      }
+    };
+  }, [nimMahasiswa, updateAntrianStatus]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -259,6 +264,98 @@ const JadwalBimbinganMahasiswa = () => {
       fileInputRef.current.value = '';
     }
   };
+
+  const openDetailModal = (jadwal, dosenInfo) => {
+    // Mencari antrian mahasiswa yang sedang login
+    const myAntrian = jadwal.antrian_bimbingan?.find(
+      antrian => antrian.mahasiswa_nim === nimMahasiswa
+    );
+    
+    if (myAntrian) {
+      setSelectedAntrianDetail({
+        ...myAntrian,
+        jadwal,
+        dosenInfo
+      });
+      setIsDetailModalOpen(true);
+    } else {
+      toast.error("Tidak dapat menemukan data antrian Anda");
+    }
+  };
+
+  const closeDetailModal = () => {
+    setIsDetailModalOpen(false);
+    setSelectedAntrianDetail(null);
+  };
+
+        const handleUpdateAntrianStatus = async (antrianId) => {
+      setProcessingAntrian(true);
+      setProcessingAntrianId(antrianId);
+    
+      try {
+        const auth = JSON.parse(localStorage.getItem('auth'));
+        const token = auth?.token;
+    
+        if (!token) {
+          toast.error("Silakan login terlebih dahulu");
+          setProcessingAntrian(false);
+          setProcessingAntrianId(null);
+          return;
+        }
+    
+        const endpoint = `http://127.0.0.1:8000/antrian/f/${antrianId}`;
+        const response = await fetch(endpoint, {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+    
+        if (response.ok) {
+          // Determine new status based on current status
+          let newStatus = "";
+          if (selectedAntrianDetail.status_antrian === "Menunggu") {
+            newStatus = "Dalam Bimbingan";
+            toast.success("Status berhasil diubah menjadi Dalam Bimbingan");
+          } else if (selectedAntrianDetail.status_antrian === "Dalam Bimbingan") {
+            newStatus = "Selesai";
+            toast.success("Status berhasil diubah menjadi Selesai");
+          }
+    
+          // Update state jadwalByDosen
+          setJadwalByDosen((prevState) =>
+            prevState.map((dosenData) => ({
+              ...dosenData,
+              jadwalList: dosenData.jadwalList.map((jadwal) => ({
+                ...jadwal,
+                antrian_bimbingan: jadwal.antrian_bimbingan?.map((antrian) =>
+                  antrian.id_antrian === antrianId
+                    ? { ...antrian, status_antrian: newStatus }
+                    : antrian
+                ) || [],
+              })),
+            }))
+          );
+    
+          // Update selectedAntrianDetail immediately
+          if (selectedAntrianDetail?.id_antrian === antrianId) {
+            setSelectedAntrianDetail((prev) => ({
+              ...prev,
+              status_antrian: newStatus,
+            }));
+          }
+        } else {
+          const errorData = await response.json();
+          toast.error(errorData.detail || "Gagal mengubah status antrian");
+        }
+      } catch (err) {
+        console.error("Error saat mengubah status antrian:", err);
+        toast.error("Terjadi kesalahan saat mengubah status antrian");
+      } finally {
+        setProcessingAntrian(false);
+        setProcessingAntrianId(null);
+      }
+    };
 
   const handleDaftarAntrian = async () => {
     if (submitting || !selectedJadwal) return;
@@ -390,16 +487,16 @@ const JadwalBimbinganMahasiswa = () => {
     let bgColor, textColor, icon;
     
     switch(status) {
-      case "Sedang Bimbingan":
+      
       case "Dalam Bimbingan":
         bgColor = "bg-blue-100";
         textColor = "text-blue-800";
-        icon = <Clock className="shrink-0 mr-1" size={12} />;
+        icon = <Play className="shrink-0 mr-1" size={12} />;
         break;
       case "Selesai":
         bgColor = "bg-green-100";
         textColor = "text-green-800";
-        icon = <Check className="shrink-0 mr-1" size={12} />;
+        icon = <CheckCircle className="shrink-0 mr-1" size={12} />;
         break;
       case "Menunggu":
       default:
@@ -414,6 +511,29 @@ const JadwalBimbinganMahasiswa = () => {
         {icon} {status}
       </span>
     );
+  };
+
+  // Mendapatkan antrian mahasiswa pada jadwal tertentu
+  const getMyAntrian = (jadwal) => {
+    if (!jadwal.antrian_bimbingan) return null;
+    return jadwal.antrian_bimbingan.find(antrian => antrian.mahasiswa_nim === nimMahasiswa);
+  };
+
+  // Mendapatkan warna latar belakang untuk kartu jadwal berdasarkan status antrian
+  const getCardBgStyle = (jadwal) => {
+    const myAntrian = getMyAntrian(jadwal);
+    
+    if (!myAntrian) return "bg-gray-50";
+    
+    switch(myAntrian.status_antrian) {
+      case "Dalam Bimbingan":
+        return "bg-blue-50 border-blue-300";
+      case "Selesai":
+        return "bg-green-50 border-green-300";
+      case "Menunggu":
+      default:
+        return "bg-yellow-50 border-yellow-300";
+    }
   };
 
   if (loading) return <div className="p-4 text-center">Memuat jadwal bimbingan...</div>;
@@ -460,88 +580,108 @@ const JadwalBimbinganMahasiswa = () => {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
-                  {dosenData.jadwalList.map((jadwal) => (
-                    <div key={jadwal.bimbingan_id} className="bg-gray-50 rounded-lg p-4 border border-gray-200 hover:border-blue-300 transition-colors">
-                      <div className="mb-3">
-                        <h3 className="font-semibold text-blue-700">Jadwal #{jadwal.bimbingan_id}</h3>
-                        <p className="text-sm text-gray-600">{formatDate(jadwal.tanggal)}</p>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-2 mb-3">
-                        <div className="bg-white p-2 rounded border border-gray-100">
-                          <p className="text-xs text-gray-500">Waktu Mulai</p>
-                          <p className="font-medium">{formatTime(jadwal.waktu_mulai)} WIB</p>
+                  {dosenData.jadwalList.map((jadwal) => {
+                    const myAntrian = getMyAntrian(jadwal);
+                    const cardStyle = getCardBgStyle(jadwal);
+                    
+                    return (
+                      <div 
+                        key={jadwal.bimbingan_id} 
+                        className={`rounded-lg p-4 border ${cardStyle} hover:shadow-md transition-all duration-300`}
+                      >
+                        {myAntrian && (
+                          <div className="mb-3 flex justify-between items-center">
+                            <span className="bg-blue-600 text-white text-xs px-2 py-1 rounded-full">
+                              Antrian Saya
+                            </span>
+                            {renderStatusBadge(myAntrian.status_antrian)}
+                          </div>
+                        )}
+                        
+                        <div className="mb-3">
+                          <h3 className="font-semibold text-blue-700">Jadwal #{jadwal.bimbingan_id}</h3>
+                          <p className="text-sm text-gray-600">{formatDate(jadwal.tanggal)}</p>
                         </div>
-                        <div className="bg-white p-2 rounded border border-gray-100">
-                          <p className="text-xs text-gray-500">Waktu Selesai</p>
-                          <p className="font-medium">{formatTime(jadwal.waktu_selesai)} WIB</p>
+                        
+                        <div className="grid grid-cols-2 gap-2 mb-3">
+                          <div className="bg-white p-2 rounded border border-gray-100">
+                            <p className="text-xs text-gray-500">Waktu Mulai</p>
+                            <p className="font-medium">{formatTime(jadwal.waktu_mulai)} WIB</p>
+                          </div>
+                          <div className="bg-white p-2 rounded border border-gray-100">
+                            <p className="text-xs text-gray-500">Waktu Selesai</p>
+                            <p className="font-medium">{formatTime(jadwal.waktu_selesai)} WIB</p>
+                          </div>
                         </div>
-                      </div>
-                      
-                      <div className="mb-3">
-                        <div className="flex justify-between items-center mb-1">
-                          <p className="text-xs text-gray-500">Status Kuota</p>
-                          <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full">
-                            {jadwal.antrian_bimbingan?.length || 0}/{jadwal.jumlah_antrian} Slot
-                          </span>
+                        
+                        <div className="mb-3">
+                          <div className="flex justify-between items-center mb-1">
+                            <p className="text-xs text-gray-500">Status Kuota</p>
+                            <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full">
+                              {jadwal.antrian_bimbingan?.length || 0}/{jadwal.jumlah_antrian} Slot
+                            </span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div 
+                              className="bg-blue-600 h-2 rounded-full" 
+                              style={{ width: `${((jadwal.antrian_bimbingan?.length || 0) / jadwal.jumlah_antrian) * 100}%` }}
+                            ></div>
+                          </div>
                         </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="bg-blue-600 h-2 rounded-full" 
-                            style={{ width: `${((jadwal.antrian_bimbingan?.length || 0) / jadwal.jumlah_antrian) * 100}%` }}
-                          ></div>
-                        </div>
-                      </div>
-                      
-                      {/* Lokasi */}
-                      {jadwal.lokasi && (
-                        <div className="mb-3 text-sm flex items-start">
-                          <MapPin size={16} className="text-gray-500 mr-1 mt-0.5" />
-                          <span className="text-gray-700">{jadwal.lokasi}</span>
-                        </div>
-                      )}
-                      
-                      {/* Keterangan */}
-                      {jadwal.keterangan && (
-                        <div className="mb-3 text-sm flex items-start">
-                          <FileText size={16} className="text-gray-500 mr-1 mt-0.5" />
-                          <span className="text-gray-700">{jadwal.keterangan}</span>
-                        </div>
-                      )}
-                      
-                      {isInQueue(jadwal) ? (
-                        <div className="bg-green-100 border border-green-200 text-green-700 px-3 py-2 rounded text-sm">
-                          <Check size={16} className="inline mr-1" /> Anda sudah terdaftar dalam antrian ini
-                        </div>
-                      ) : (
-                        (jadwal.antrian_bimbingan?.length || 0) < jadwal.jumlah_antrian && (
-                          <button 
-                            onClick={() => openConfirmationModal(jadwal, dosenData)}
-                            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded text-sm transition duration-200 flex items-center justify-center"
-                          >
-                            <Users size={16} className="mr-2" />
-                            Ambil Antrian Bimbingan
-                          </button>
-                        )
-                      )}
-                      
-                      {jadwal.antrian_bimbingan?.length > 0 && (
-                        <div className="mt-3">
-                          <p className="text-xs text-gray-500 mb-1">Daftar Antrian ({jadwal.antrian_bimbingan.length})</p>
-                          <ul className="text-sm space-y-1 max-h-32 overflow-y-auto">
-                            {jadwal.antrian_bimbingan.map((antrian, index) => (
-                              <li key={antrian.id_antrian || index} className={`py-1 px-2 rounded ${antrian.mahasiswa_nim === nimMahasiswa ? 'bg-blue-50 border border-blue-100' : ''}`}>
-                                <div className="flex justify-between items-center">
+                        
+                        {/* Lokasi */}
+                        {jadwal.lokasi && (
+                          <div className="mb-3 text-sm flex items-start">
+                            <MapPin size={16} className="text-gray-500 mr-1 mt-0.5" />
+                            <span className="text-gray-700">{jadwal.lokasi}</span>
+                          </div>
+                        )}
+                        
+                        {/* Keterangan */}
+                        {jadwal.keterangan && (
+                          <div className="mb-3 text-sm flex items-start">
+                            <FileText size={16} className="text-gray-500 mr-1 mt-0.5" />
+                            <span className="text-gray-700">{jadwal.keterangan}</span>
+                          </div>
+                        )}
+                        
+                        {myAntrian ? (
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => openDetailModal(jadwal, dosenData)}
+                              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-3 rounded text-sm transition duration-200 flex items-center justify-center"
+                            >
+                              <Eye size={16} className="mr-1.5" /> Detail Antrian Saya
+                            </button>
+                          </div>
+                        ) : (
+                          (jadwal.antrian_bimbingan?.length || 0) < jadwal.jumlah_antrian && (
+                            <button 
+                              onClick={() => openConfirmationModal(jadwal, dosenData)}
+                              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded text-sm transition duration-200 flex items-center justify-center"
+                            >
+                              <Users size={16} className="mr-2" />
+                              Ambil Antrian Bimbingan
+                            </button>
+                          )
+                        )}
+                        
+                        {jadwal.antrian_bimbingan?.length > 0 && (
+                          <div className="mt-3">
+                            <p className="text-xs text-gray-500 mb-1">Daftar Antrian ({jadwal.antrian_bimbingan.length})</p>
+                            <ul className="text-sm space-y-1 max-h-32 overflow-y-auto">
+                              {jadwal.antrian_bimbingan.map((antrian, index) => (
+                                <li key={antrian.id_antrian || index} className={`py-1 px-2 rounded flex items-center justify-between ${antrian.mahasiswa_nim === nimMahasiswa ? 'bg-blue-50 border border-blue-100 font-medium' : ''}`}>
                                   <span>{antrian.position || index + 1}. {antrian.mahasiswa_nim}</span>
                                   {renderStatusBadge(antrian.status_antrian)}
-                                </div>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -549,7 +689,7 @@ const JadwalBimbinganMahasiswa = () => {
         </div>
       )}
 
-      {/* Modal Konfirmasi Ambil Antrian - LEBIH KOMPAK DAN DENGAN SCROLL INTERNAL */}
+      {/* Modal Konfirmasi Ambil Antrian */}
       {isModalOpen && selectedJadwal && (
         <div className="fixed inset-0 bg-none bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-md animate-fadeIn overflow-hidden flex flex-col" style={{ maxHeight: '85vh' }}>
@@ -681,6 +821,175 @@ const JadwalBimbinganMahasiswa = () => {
                       Ambil Antrian
                     </>
                   )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Detail Antrian Saya */}
+      {isDetailModalOpen && selectedAntrianDetail && (
+        <div className="fixed inset-0 bg-none bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg animate-fadeIn overflow-hidden">
+            {/* Header */}
+            <div className="bg-blue-600 text-white px-6 py-4 flex items-center justify-between">
+              <h3 className="text-xl font-semibold flex items-center">
+                <Bell size={20} className="mr-2" /> Detail Antrian Saya
+              </h3>
+              <button 
+                onClick={closeDetailModal}
+                className="text-white hover:text-gray-200 transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            {/* Status Section */}
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <p className="text-sm text-gray-500 mb-1">Status Antrian</p>
+                  <div className="flex items-center">
+                    {renderStatusBadge(selectedAntrianDetail.status_antrian)}
+                  </div>
+                </div>
+                
+                <div>
+                  <p className="text-sm text-gray-500 mb-1">Posisi Antrian</p>
+                  <div className="flex items-center">
+                    <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                      #{selectedAntrianDetail.position || "N/A"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Detail Section */}
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h4 className="text-md font-semibold text-gray-800 mb-4 flex items-center">
+                <Calendar className="mr-2 text-blue-600" size={18} /> 
+                Detail Jadwal Bimbingan
+              </h4>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-xs text-gray-500">Tanggal</p>
+                    <p className="font-medium text-gray-800">{formatDate(selectedAntrianDetail.jadwal.tanggal)}</p>
+                  </div>
+                  
+                  <div>
+                    <p className="text-xs text-gray-500">Waktu</p>
+                    <p className="font-medium text-gray-800">
+                      {formatTime(selectedAntrianDetail.jadwal.waktu_mulai)} - {formatTime(selectedAntrianDetail.jadwal.waktu_selesai)} WIB
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-xs text-gray-500">Dosen</p>
+                    <p className="font-medium text-gray-800">
+                      {selectedAntrianDetail.dosenInfo.dosenRole} ({selectedAntrianDetail.dosenInfo.dosenAlias})
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <p className="text-xs text-gray-500">Lokasi</p>
+                    <p className="font-medium text-gray-800">{selectedAntrianDetail.jadwal.lokasi || "-"}</p>
+                  </div>
+                </div>
+              </div>
+              
+              {selectedAntrianDetail.jadwal.keterangan && (
+                <div className="mt-3">
+                  <p className="text-xs text-gray-500">Keterangan</p>
+                  <p className="font-medium text-gray-800">{selectedAntrianDetail.jadwal.keterangan}</p>
+                </div>
+              )}
+            </div>
+            
+            {/* File Section */}
+            {selectedAntrianDetail.files && (
+              <div className="px-6 py-4 border-b border-gray-200">
+                <h4 className="text-md font-semibold text-gray-800 mb-3 flex items-center">
+                  <FileCheck className="mr-2 text-blue-600" size={18} /> 
+                  File Bimbingan
+                </h4>
+                
+                <div className="bg-blue-50 rounded-lg p-3 border border-blue-100 flex items-center justify-between">
+                  <div className="flex items-center">
+                    <FileText size={16} className="text-blue-600 mr-2" />
+                    <div>
+                      <p className="text-sm font-medium text-blue-700 truncate max-w-[200px]">
+                        {selectedAntrianDetail.files.filename}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <a 
+                    href={selectedAntrianDetail.files.file_url} 
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs flex items-center"
+                  >
+                    <Download size={14} className="mr-1" />
+                    Download
+                  </a>
+                </div>
+              </div>
+            )}
+            
+            {/* Action Buttons */}
+            <div className="p-6">
+              <h4 className="text-md font-semibold text-gray-800 mb-3">Ubah Status Antrian</h4>
+              
+              <div className="flex flex-wrap gap-3">
+                {selectedAntrianDetail.status_antrian === "Menunggu" && (
+                  <button
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={() => handleUpdateAntrianStatus(selectedAntrianDetail.id_antrian)}
+                    disabled={processingAntrian}
+                  >
+                    {processingAntrian && processingAntrianId === selectedAntrianDetail.id_antrian ? (
+                      "Memproses..."
+                    ) : (
+                      <>
+                        <Play size={16} /> Mulai Bimbingan
+                      </>
+                    )}
+                  </button>
+                )}
+                
+                {selectedAntrianDetail.status_antrian === "Dalam Bimbingan" && (
+                  <button
+                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={() => handleUpdateAntrianStatus(selectedAntrianDetail.id_antrian)}
+                    disabled={processingAntrian}
+                  >
+                    {processingAntrian && processingAntrianId === selectedAntrianDetail.id_antrian ? (
+                      "Memproses..."
+                    ) : (
+                      <>
+                        <CheckCircle size={16} /> Selesai Bimbingan
+                      </>
+                    )}
+                  </button>
+                )}
+                
+                {selectedAntrianDetail.status_antrian === "Selesai" && (
+                  <div className="bg-gray-100 text-gray-600 px-4 py-2 rounded-lg flex items-center gap-2">
+                    <CheckCircle size={16} /> Antrian telah selesai
+                  </div>
+                )}
+                
+                <button
+                  className="border border-gray-300 hover:bg-gray-100 text-gray-700 px-4 py-2 rounded-lg flex items-center gap-2 transition-colors ml-auto"
+                  onClick={closeDetailModal}
+                >
+                  <X size={16} /> Tutup
                 </button>
               </div>
             </div>
