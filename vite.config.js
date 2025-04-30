@@ -12,9 +12,9 @@ export default defineConfig({
       injectRegister: 'auto',     // auto daftar SW ke index.html
 
       manifest: {
-        name: 'Sistem Antrian Pelayanan Prodi & Administrasi',
-        short_name: 'AntrianProdi',
-        description: 'Web App PWA untuk sistem antrian pelayanan administrasi dan bimbingan dosen',
+        name: 'Sistem Manajemen Layanan Administrasi dan Antrean Program Studi',
+        short_name: 'SIMANTAP',
+        description: 'Web App untuk sistem antrian pelayanan administrasi dan bimbingan dosen',
         theme_color: '#1277C9',
         background_color: '#ffffff',
         display: 'standalone',
