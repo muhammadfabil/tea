@@ -63,39 +63,94 @@ const KelolaWaktuBimbingan = () => {
       const jadwalIndex = updatedList.findIndex(jadwal => jadwal.bimbingan_id === waktu_id);
       
       if (jadwalIndex !== -1) {
-        // Update the status of each antrian based on the queue data
+        // Create a new array that combines existing antrian with any new entries
         if (updatedList[jadwalIndex].antrian_bimbingan) {
-          updatedList[jadwalIndex].antrian_bimbingan = 
-            updatedList[jadwalIndex].antrian_bimbingan.map(antrian => {
-              // Find matching antrian in the queue
-              const queueItem = queue.find(q => q.id_antrian === antrian.id_antrian);
-              
-              if (queueItem) {
-                return {
-                  ...antrian,
-                  status_antrian: queueItem.status
-                };
-              }
-              return antrian;
-            });
+          // Get existing antrian IDs for comparison
+          const existingAntrianIds = updatedList[jadwalIndex].antrian_bimbingan.map(a => a.id_antrian);
+          
+          // Find new entries that aren't in the existing antrian
+          const newEntries = queue.filter(q => !existingAntrianIds.includes(q.id_antrian))
+            .map(q => ({
+              id_antrian: q.id_antrian,
+              mahasiswa_nim: q.nim,
+              status_antrian: q.status,
+              position: updatedList[jadwalIndex].antrian_bimbingan.length + 1 // Position at the end
+            }));
+          
+          // Update existing entries
+          const updatedEntries = updatedList[jadwalIndex].antrian_bimbingan.map(antrian => {
+            const queueItem = queue.find(q => q.id_antrian === antrian.id_antrian);
+            if (queueItem) {
+              return {
+                ...antrian,
+                status_antrian: queueItem.status,
+                mahasiswa_nim: queueItem.nim
+              };
+            }
+            return antrian;
+          });
+          
+          // Combine updated existing entries with new entries
+          updatedList[jadwalIndex].antrian_bimbingan = [...updatedEntries, ...newEntries];
+        } else {
+          // If no antrian_bimbingan exists yet, create it from queue
+          updatedList[jadwalIndex].antrian_bimbingan = queue.map((q, index) => ({
+            id_antrian: q.id_antrian,
+            mahasiswa_nim: q.nim,
+            status_antrian: q.status,
+            position: index + 1
+          }));
         }
       }
       
       return updatedList;
     });
     
-    // Update selectedJadwal jika sedang melihat detail
+    // Update selectedJadwal if currently viewing details
     if (selectedJadwal && selectedJadwal.bimbingan_id === waktu_id) {
       setSelectedJadwal(prevJadwal => {
-        if (!prevJadwal || !prevJadwal.antrian_bimbingan) return prevJadwal;
+        if (!prevJadwal) return prevJadwal;
         
-        const updatedAntrian = prevJadwal.antrian_bimbingan.map(antrian => {
-          const queueItem = queue.find(q => q.id_antrian === antrian.id_antrian);
-          if (queueItem) {
-            return { ...antrian, status_antrian: queueItem.status };
-          }
-          return antrian;
-        });
+        // Similar logic for selectedJadwal
+        let updatedAntrian;
+        
+        if (prevJadwal.antrian_bimbingan && prevJadwal.antrian_bimbingan.length > 0) {
+          // Get existing antrian IDs
+          const existingAntrianIds = prevJadwal.antrian_bimbingan.map(a => a.id_antrian);
+          
+          // Find new entries
+          const newEntries = queue.filter(q => !existingAntrianIds.includes(q.id_antrian))
+            .map(q => ({
+              id_antrian: q.id_antrian,
+              mahasiswa_nim: q.nim,
+              status_antrian: q.status,
+              position: prevJadwal.antrian_bimbingan.length + 1 // Position at the end
+            }));
+          
+          // Update existing entries
+          const updatedEntries = prevJadwal.antrian_bimbingan.map(antrian => {
+            const queueItem = queue.find(q => q.id_antrian === antrian.id_antrian);
+            if (queueItem) {
+              return {
+                ...antrian,
+                status_antrian: queueItem.status,
+                mahasiswa_nim: queueItem.nim
+              };
+            }
+            return antrian;
+          });
+          
+          // Combine
+          updatedAntrian = [...updatedEntries, ...newEntries];
+        } else {
+          // If no antrian yet, create from queue
+          updatedAntrian = queue.map((q, index) => ({
+            id_antrian: q.id_antrian,
+            mahasiswa_nim: q.nim,
+            status_antrian: q.status,
+            position: index + 1
+          }));
+        }
         
         return { ...prevJadwal, antrian_bimbingan: updatedAntrian };
       });
@@ -127,7 +182,7 @@ const KelolaWaktuBimbingan = () => {
         switch (data.event) {
           case 'update_antrian':
             updateAntrianStatus(data);
-            toast.info(`Status antrian untuk jadwal #${data.waktu_id} telah diperbarui`);
+            handleStudentJoinedQueue(data); // Add this line to handle student joins
             break;
           case 'new_antrian':
             // Refresh jadwal list when a new antrian is created
@@ -524,6 +579,28 @@ const KelolaWaktuBimbingan = () => {
       </span>
     );
   };
+
+  // This will handle real-time notification when a student joins a queue
+  const handleStudentJoinedQueue = useCallback((data) => {
+    const { waktu_id, queue } = data;
+    
+    if (!waktu_id || !queue || !queue.length) return;
+    
+    // Find the latest joined student (if any)
+    const newStudent = queue.find(q => q.status === "Menunggu");
+    
+    if (newStudent) {
+      // Display a toast notification with student information
+      toast.info(
+        <div>
+          <strong>Mahasiswa baru di antrian!</strong>
+          <p className="text-sm mt-1">NIM: {newStudent.nim}</p>
+          <p className="text-sm">Jadwal ID: {waktu_id}</p>
+        </div>,
+        { autoClose: 5000 }
+      );
+    }
+  }, []);
 
   return (
     <div className="max-w-6xl mx-auto p-6">

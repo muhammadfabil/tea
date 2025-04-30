@@ -4,8 +4,10 @@ import {
   Calendar, Clock, MapPin, FileText, Users, X, Upload, Check, AlertCircle, 
   Wifi, WifiOff, Eye, CheckCircle, Play, Download, Bell, ChevronRight, FileCheck
 } from 'lucide-react';
+import { useAuth } from "../../context/AuthContext";
 
 const JadwalBimbinganMahasiswa = () => {
+  const { token } = useAuth(); // Get token directly from AuthContext
   const [jadwalByDosen, setJadwalByDosen] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -26,7 +28,7 @@ const JadwalBimbinganMahasiswa = () => {
   const [selectedJadwal, setSelectedJadwal] = useState(null);
   const [selectedDosenInfo, setSelectedDosenInfo] = useState(null);
 
-  // Fungsi untuk update status antrian secara real-time
+  // Update the updateAntrianStatus function to also update the selectedAntrianDetail
   const updateAntrianStatus = useCallback((data) => {
     const { inisial, waktu_id, queue } = data;
     
@@ -60,84 +62,144 @@ const JadwalBimbinganMahasiswa = () => {
                 }
                 return antrian;
               });
+              
+            // Also update selectedAntrianDetail if it matches the updated antrian
+            if (selectedAntrianDetail && selectedAntrianDetail.jadwal.bimbingan_id === waktu_id) {
+              const updatedAntrian = queue.find(q => q.id_antrian === selectedAntrianDetail.id_antrian);
+              if (updatedAntrian) {
+                setSelectedAntrianDetail(prev => ({
+                  ...prev,
+                  status_antrian: updatedAntrian.status
+                }));
+              }
+            }
           }
         }
       }
       
       return newState;
     });
-  }, []);
+  }, [selectedAntrianDetail]);
 
-  // Setup WebSocket connection
+  // Setup WebSocket connection - FIXED
   useEffect(() => {
     if (!nimMahasiswa) return;
-    
-    const authData = localStorage.getItem("auth");
-    const token = authData ? JSON.parse(authData).token : null;
-    
     if (!token) return;
     
-    // Create WebSocket connection with correct endpoint
+    // Close existing connection if any
+    if (socketRef.current) {
+      socketRef.current.close();
+      socketRef.current = null;
+    }
+
+    // Create WebSocket connection with current token from AuthContext
     socketRef.current = new WebSocket(`ws://localhost:8000/ws?token=${token}`);
-    
+
     // Connection opened
-    socketRef.current.addEventListener('open', (event) => {
-      console.log('✅ WebSocket connected');
+    socketRef.current.addEventListener("open", () => {
+      console.log("✅ WebSocket connected");
       setSocketConnected(true);
     });
-    
+
     // Listen for messages
-    socketRef.current.addEventListener('message', (event) => {
+    socketRef.current.addEventListener("message", (event) => {
       try {
         const data = JSON.parse(event.data);
-        
-        // Handle different event types
+
         switch (data.event) {
-          case 'update_antrian':
+          case "update_antrian":
             updateAntrianStatus(data);
-            // Show notification if user is in the queue that was updated
-            const isUserInQueue = data.queue.some(q => q.nim === nimMahasiswa);
-            if (isUserInQueue) {
-              const status = data.queue.find(q => q.nim === nimMahasiswa).status;
-              toast.info(`Status antrian Anda telah diperbarui menjadi: ${status}`);
-            }
             break;
+
+          case "create_waktu_bimbingan":
+            setJadwalByDosen((prevState) => {
+              const updatedState = [...prevState];
+
+              // Cari dosen berdasarkan 
+              const dosenIndex = updatedState.findIndex(
+                (dosen) => dosen.dosenAlias === data.inisial
+              );
+
+              if (dosenIndex !== -1) {
+                // Periksa apakah jadwal sudah ada berdasarkan bimbingan_id
+                const jadwalExists = updatedState[dosenIndex].jadwalList.some(
+                  (jadwal) => jadwal.bimbingan_id === data.waktu_id
+                );
+
+                if (!jadwalExists) {
+                  // Tambahkan jadwal baru jika belum ada
+                  updatedState[dosenIndex].jadwalList.push({
+                    bimbingan_id: data.waktu_id,
+                    tanggal: data.tanggal,
+                    waktu_mulai: data.waktu_mulai,
+                    waktu_selesai: data.waktu_selesai,
+                    jumlah_antrian: data.jumlah_antrian,
+                    lokasi: data.lokasi,
+                    keterangan: data.keterangan,
+                    antrian_bimbingan: [], // Initialize with an empty queue
+                  });
+                }
+              } else {
+                // Tambahkan dosen baru jika belum ada
+                updatedState.push({
+                  dosenAlias: data.inisial,
+                  dosenRole: "Dosen Pembimbing", // Default role, adjust if needed
+                  jadwalList: [
+                    {
+                      bimbingan_id: data.waktu_id,
+                      tanggal: data.tanggal,
+                      waktu_mulai: data.waktu_mulai,
+                      waktu_selesai: data.waktu_selesai,
+                      jumlah_antrian: data.jumlah_antrian,
+                      lokasi: data.lokasi,
+                      keterangan: data.keterangan,
+                      antrian_bimbingan: [], // Initialize with an empty queue
+                    },
+                  ],
+                });
+              }
+
+              return updatedState;
+            });
+
+            toast.success("Jadwal baru telah ditambahkan!");
+            break;
+
           default:
-            console.log('Received unknown event:', data.event);
+            console.log("Received unknown event:", data.event);
         }
       } catch (err) {
-        console.error('Error parsing WebSocket message:', err);
+        console.error("Error parsing WebSocket message:", err);
       }
     });
-    
+
     // Connection closed or error
-    socketRef.current.addEventListener('close', (event) => {
-      console.log('❌ WebSocket connection closed');
+    socketRef.current.addEventListener("close", () => {
+      console.log("❌ WebSocket connection closed");
       setSocketConnected(false);
-      
+
       // Attempt to reconnect after 5 seconds
       setTimeout(() => {
         if (socketRef.current?.readyState === WebSocket.CLOSED) {
-          console.log('🔄 Attempting to reconnect WebSocket...');
-          // Recursively call this effect to attempt reconnection
+          console.log("🔄 Attempting to reconnect WebSocket...");
           socketRef.current = null;
         }
       }, 5000);
     });
-    
-    socketRef.current.addEventListener('error', (error) => {
-      console.error('WebSocket error:', error);
+
+    socketRef.current.addEventListener("error", (error) => {
+      console.error("WebSocket error:", error);
       setSocketConnected(false);
     });
-    
-    // Clean up on unmount
+
+    // Clean up on unmount or token change
     return () => {
       if (socketRef.current) {
         socketRef.current.close();
         socketRef.current = null;
       }
     };
-  }, [nimMahasiswa, updateAntrianStatus]);
+  }, [nimMahasiswa, updateAntrianStatus, token]); // Added token to dependency array
 
   useEffect(() => {
     const fetchData = async () => {
@@ -272,6 +334,7 @@ const JadwalBimbinganMahasiswa = () => {
     );
     
     if (myAntrian) {
+      // Make sure we're always using the latest status
       setSelectedAntrianDetail({
         ...myAntrian,
         jadwal,
@@ -288,74 +351,72 @@ const JadwalBimbinganMahasiswa = () => {
     setSelectedAntrianDetail(null);
   };
 
-        const handleUpdateAntrianStatus = async (antrianId) => {
-      setProcessingAntrian(true);
-      setProcessingAntrianId(antrianId);
-    
-      try {
-        const auth = JSON.parse(localStorage.getItem('auth'));
-        const token = auth?.token;
-    
-        if (!token) {
-          toast.error("Silakan login terlebih dahulu");
-          setProcessingAntrian(false);
-          setProcessingAntrianId(null);
-          return;
-        }
-    
-        const endpoint = `http://127.0.0.1:8000/antrian/f/${antrianId}`;
-        const response = await fetch(endpoint, {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-    
-        if (response.ok) {
-          // Determine new status based on current status
-          let newStatus = "";
-          if (selectedAntrianDetail.status_antrian === "Menunggu") {
-            newStatus = "Dalam Bimbingan";
-            toast.success("Status berhasil diubah menjadi Dalam Bimbingan");
-          } else if (selectedAntrianDetail.status_antrian === "Dalam Bimbingan") {
-            newStatus = "Selesai";
-            toast.success("Status berhasil diubah menjadi Selesai");
-          }
-    
-          // Update state jadwalByDosen
-          setJadwalByDosen((prevState) =>
-            prevState.map((dosenData) => ({
-              ...dosenData,
-              jadwalList: dosenData.jadwalList.map((jadwal) => ({
-                ...jadwal,
-                antrian_bimbingan: jadwal.antrian_bimbingan?.map((antrian) =>
-                  antrian.id_antrian === antrianId
-                    ? { ...antrian, status_antrian: newStatus }
-                    : antrian
-                ) || [],
-              })),
-            }))
-          );
-    
-          // Update selectedAntrianDetail immediately
-          if (selectedAntrianDetail?.id_antrian === antrianId) {
-            setSelectedAntrianDetail((prev) => ({
-              ...prev,
-              status_antrian: newStatus,
-            }));
-          }
-        } else {
-          const errorData = await response.json();
-          toast.error(errorData.detail || "Gagal mengubah status antrian");
-        }
-      } catch (err) {
-        console.error("Error saat mengubah status antrian:", err);
-        toast.error("Terjadi kesalahan saat mengubah status antrian");
-      } finally {
+  const handleUpdateAntrianStatus = async (antrianId) => {
+    setProcessingAntrian(true);
+    setProcessingAntrianId(antrianId);
+
+    try {
+      const auth = JSON.parse(localStorage.getItem('auth'));
+      const currentToken = token || auth?.token; // Use context token or fallback to localStorage
+
+      if (!currentToken) {
+        toast.error("Silakan login terlebih dahulu");
         setProcessingAntrian(false);
         setProcessingAntrianId(null);
+        return;
       }
-    };
+
+      const endpoint = `http://127.0.0.1:8000/antrian/f/${antrianId}`;
+      const response = await fetch(endpoint, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${currentToken}`,
+        },
+      });
+
+      if (response.ok) {
+        // Determine new status based on current status
+        let newStatus = "";
+        if (selectedAntrianDetail.status_antrian === "Menunggu") {
+          newStatus = "Dalam Bimbingan";
+          toast.success("Status berhasil diubah menjadi Dalam Bimbingan");
+        } else if (selectedAntrianDetail.status_antrian === "Dalam Bimbingan") {
+          newStatus = "Selesai";
+          toast.success("Status berhasil diubah menjadi Selesai");
+        }
+
+        // Update state jadwalByDosen
+        setJadwalByDosen((prevState) =>
+          prevState.map((dosenData) => ({
+            ...dosenData,
+            jadwalList: dosenData.jadwalList.map((jadwal) => ({
+              ...jadwal,
+              antrian_bimbingan: jadwal.antrian_bimbingan?.map((antrian) =>
+                antrian.id_antrian === antrianId
+                  ? { ...antrian, status_antrian: newStatus }
+                  : antrian
+              ) || [],
+            })),
+          }))
+        );
+
+        // Update selectedAntrianDetail immediately
+        setSelectedAntrianDetail((prev) => ({
+          ...prev,
+          status_antrian: newStatus,
+        }));
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.detail || "Gagal mengubah status antrian");
+      }
+    } catch (err) {
+      console.error("Error saat mengubah status antrian:", err);
+      toast.error("Terjadi kesalahan saat mengubah status antrian");
+    } finally {
+      setProcessingAntrian(false);
+      setProcessingAntrianId(null);
+    }
+  };
 
   const handleDaftarAntrian = async () => {
     if (submitting || !selectedJadwal) return;
@@ -364,9 +425,9 @@ const JadwalBimbinganMahasiswa = () => {
     
     try {
       const auth = JSON.parse(localStorage.getItem('auth'));
-      const token = auth?.token;
+      const currentToken = token || auth?.token; // Use context token or fallback to localStorage
       
-      if (!token) {
+      if (!currentToken) {
         toast.error("Silakan login terlebih dahulu");
         setSubmitting(false);
         return;
@@ -388,9 +449,9 @@ const JadwalBimbinganMahasiswa = () => {
       const response = await fetch(`http://127.0.0.1:8000/antrian/?${queryParams.toString()}`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${currentToken}`
         },
-        body: formData // Hanya berisi file
+        body: formData
       });
       
       const result = await response.json();
@@ -540,46 +601,57 @@ const JadwalBimbinganMahasiswa = () => {
   if (error) return <div className="p-4 text-red-500">Error: {error}</div>;
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-blue-700">Jadwal Bimbingan</h1>
-        <div className={`flex items-center ${socketConnected ? 'text-green-600' : 'text-gray-400'}`}>
+    <div className="p-6 bg-slate-50 min-h-screen">
+      <div className="mb-6 flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-800">Jadwal Bimbingan</h1>
+          <p className="text-slate-500 mt-1">Pilih jadwal bimbingan dengan dosen pembimbing Anda</p>
+        </div>
+        <div className={`flex items-center px-3 py-1.5 rounded-full ${socketConnected ? 'bg-green-50 text-green-600' : 'bg-slate-100 text-slate-400'}`}>
           {socketConnected ? (
             <>
-              <Wifi size={16} className="mr-1" />
-              <span className="text-xs">Realtime aktif</span>
+              <Wifi size={16} className="mr-1.5" />
+              <span className="text-xs font-medium">Realtime aktif</span>
             </>
           ) : (
             <>
-              <WifiOff size={16} className="mr-1" />
-              <span className="text-xs">Menghubungkan...</span>
+              <WifiOff size={16} className="mr-1.5" />
+              <span className="text-xs font-medium">Menghubungkan...</span>
             </>
           )}
         </div>
       </div>
       
       {jadwalByDosen.length === 0 ? (
-        <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded">
-          Belum ada relasi dosen pembimbing yang terdaftar.
+        <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-8 text-center">
+          <div className="flex flex-col items-center justify-center">
+            <AlertCircle className="w-16 h-16 text-slate-300 mb-4" />
+            <h3 className="text-lg font-medium text-slate-700 mb-2">Belum ada relasi dosen pembimbing</h3>
+            <p className="text-slate-500 max-w-md mx-auto">
+              Anda belum terhubung dengan dosen pembimbing. Silakan hubungi administrator untuk pengaturan relasi.
+            </p>
+          </div>
         </div>
       ) : (
-        <div className="space-y-8">
+        <div className="space-y-6">
           {jadwalByDosen.map((dosenData, idx) => (
-            <div key={idx} className="bg-white shadow-md rounded-lg overflow-hidden border border-gray-200">
-              <div className="bg-blue-600 text-white px-4 py-3">
+            <div key={idx} className="bg-white shadow-sm rounded-xl overflow-hidden border border-slate-200">
+              <div className="bg-blue-600 text-white px-6 py-4">
                 <h2 className="text-lg font-semibold">{dosenData.dosenRole} ({dosenData.dosenAlias})</h2>
               </div>
               
               {dosenData.error ? (
-                <div className="p-4 text-red-500">
-                  Gagal memuat jadwal: {dosenData.error}
+                <div className="p-6 flex items-center text-red-500">
+                  <AlertCircle size={20} className="mr-2" />
+                  <span>Gagal memuat jadwal: {dosenData.error}</span>
                 </div>
               ) : dosenData.jadwalList.length === 0 ? (
-                <div className="p-4 text-gray-500 italic">
-                  Belum ada jadwal bimbingan yang dibuat oleh dosen ini.
+                <div className="p-6 text-slate-500 italic flex items-center">
+                  <Calendar size={20} className="mr-2 text-slate-400" />
+                  <span>Belum ada jadwal bimbingan yang dibuat oleh dosen ini.</span>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 p-6">
                   {dosenData.jadwalList.map((jadwal) => {
                     const myAntrian = getMyAntrian(jadwal);
                     const cardStyle = getCardBgStyle(jadwal);
@@ -587,41 +659,43 @@ const JadwalBimbinganMahasiswa = () => {
                     return (
                       <div 
                         key={jadwal.bimbingan_id} 
-                        className={`rounded-lg p-4 border ${cardStyle} hover:shadow-md transition-all duration-300`}
+                        className={`rounded-xl p-5 border ${cardStyle} transition-all duration-200 hover:shadow-md`}
                       >
                         {myAntrian && (
                           <div className="mb-3 flex justify-between items-center">
-                            <span className="bg-blue-600 text-white text-xs px-2 py-1 rounded-full">
+                            <span className="bg-blue-600 text-white text-xs px-2.5 py-1 rounded-full font-medium">
                               Antrian Saya
                             </span>
                             {renderStatusBadge(myAntrian.status_antrian)}
                           </div>
                         )}
                         
-                        <div className="mb-3">
-                          <h3 className="font-semibold text-blue-700">Jadwal #{jadwal.bimbingan_id}</h3>
-                          <p className="text-sm text-gray-600">{formatDate(jadwal.tanggal)}</p>
+                        <div className="mb-4">
+                          <h3 className="font-semibold text-slate-800 flex items-center">
+                            <Calendar size={16} className="mr-1.5 text-blue-600" />
+                            {formatDate(jadwal.tanggal)}
+                          </h3>
                         </div>
                         
-                        <div className="grid grid-cols-2 gap-2 mb-3">
-                          <div className="bg-white p-2 rounded border border-gray-100">
-                            <p className="text-xs text-gray-500">Waktu Mulai</p>
-                            <p className="font-medium">{formatTime(jadwal.waktu_mulai)} WIB</p>
+                        <div className="grid grid-cols-2 gap-2 mb-4">
+                          <div className="bg-white p-3 rounded-lg border border-slate-100 shadow-sm">
+                            <p className="text-xs text-slate-500">Waktu Mulai</p>
+                            <p className="font-medium text-slate-800">{formatTime(jadwal.waktu_mulai)} WIB</p>
                           </div>
-                          <div className="bg-white p-2 rounded border border-gray-100">
-                            <p className="text-xs text-gray-500">Waktu Selesai</p>
-                            <p className="font-medium">{formatTime(jadwal.waktu_selesai)} WIB</p>
+                          <div className="bg-white p-3 rounded-lg border border-slate-100 shadow-sm">
+                            <p className="text-xs text-slate-500">Waktu Selesai</p>
+                            <p className="font-medium text-slate-800">{formatTime(jadwal.waktu_selesai)} WIB</p>
                           </div>
                         </div>
                         
-                        <div className="mb-3">
-                          <div className="flex justify-between items-center mb-1">
-                            <p className="text-xs text-gray-500">Status Kuota</p>
-                            <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full">
+                        <div className="mb-4">
+                          <div className="flex justify-between items-center mb-1.5">
+                            <p className="text-xs text-slate-500">Status Kuota</p>
+                            <span className="px-2 py-0.5 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
                               {jadwal.antrian_bimbingan?.length || 0}/{jadwal.jumlah_antrian} Slot
                             </span>
                           </div>
-                          <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div className="w-full bg-slate-200 rounded-full h-2">
                             <div 
                               className="bg-blue-600 h-2 rounded-full" 
                               style={{ width: `${((jadwal.antrian_bimbingan?.length || 0) / jadwal.jumlah_antrian) * 100}%` }}
@@ -632,51 +706,66 @@ const JadwalBimbinganMahasiswa = () => {
                         {/* Lokasi */}
                         {jadwal.lokasi && (
                           <div className="mb-3 text-sm flex items-start">
-                            <MapPin size={16} className="text-gray-500 mr-1 mt-0.5" />
-                            <span className="text-gray-700">{jadwal.lokasi}</span>
+                            <MapPin size={16} className="text-slate-400 mr-1.5 mt-0.5 shrink-0" />
+                            <span className="text-slate-700">{jadwal.lokasi}</span>
                           </div>
                         )}
                         
                         {/* Keterangan */}
                         {jadwal.keterangan && (
-                          <div className="mb-3 text-sm flex items-start">
-                            <FileText size={16} className="text-gray-500 mr-1 mt-0.5" />
-                            <span className="text-gray-700">{jadwal.keterangan}</span>
+                          <div className="mb-4 text-sm flex items-start">
+                            <FileText size={16} className="text-slate-400 mr-1.5 mt-0.5 shrink-0" />
+                            <span className="text-slate-700">{jadwal.keterangan}</span>
                           </div>
                         )}
                         
                         {myAntrian ? (
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => openDetailModal(jadwal, dosenData)}
-                              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-3 rounded text-sm transition duration-200 flex items-center justify-center"
-                            >
-                              <Eye size={16} className="mr-1.5" /> Detail Antrian Saya
-                            </button>
-                          </div>
+                          <button
+                            onClick={() => openDetailModal(jadwal, dosenData)}
+                            className="w-full bg-blue-50 hover:bg-blue-100 text-blue-700 py-2.5 px-4 rounded-lg text-sm transition-colors flex items-center justify-center font-medium border border-blue-200"
+                          >
+                            <Eye size={16} className="mr-1.5" /> Detail Antrian Saya
+                          </button>
                         ) : (
                           (jadwal.antrian_bimbingan?.length || 0) < jadwal.jumlah_antrian && (
                             <button 
                               onClick={() => openConfirmationModal(jadwal, dosenData)}
-                              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded text-sm transition duration-200 flex items-center justify-center"
+                              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 px-4 rounded-lg text-sm transition-colors flex items-center justify-center font-medium"
                             >
-                              <Users size={16} className="mr-2" />
+                              <Users size={16} className="mr-1.5" />
                               Ambil Antrian Bimbingan
                             </button>
                           )
                         )}
                         
                         {jadwal.antrian_bimbingan?.length > 0 && (
-                          <div className="mt-3">
-                            <p className="text-xs text-gray-500 mb-1">Daftar Antrian ({jadwal.antrian_bimbingan.length})</p>
-                            <ul className="text-sm space-y-1 max-h-32 overflow-y-auto">
-                              {jadwal.antrian_bimbingan.map((antrian, index) => (
-                                <li key={antrian.id_antrian || index} className={`py-1 px-2 rounded flex items-center justify-between ${antrian.mahasiswa_nim === nimMahasiswa ? 'bg-blue-50 border border-blue-100 font-medium' : ''}`}>
-                                  <span>{antrian.position || index + 1}. {antrian.mahasiswa_nim}</span>
-                                  {renderStatusBadge(antrian.status_antrian)}
-                                </li>
-                              ))}
-                            </ul>
+                          <div className="mt-4 pt-3 border-t border-slate-200">
+                            <p className="text-xs font-medium text-slate-500 mb-2 flex items-center">
+                              <Users size={14} className="mr-1" /> 
+                              Daftar Antrian ({jadwal.antrian_bimbingan.length})
+                            </p>
+                            <div className="max-h-36 overflow-y-auto rounded-lg border border-slate-100">
+                              <ul className="text-sm divide-y divide-slate-100">
+                                {jadwal.antrian_bimbingan.map((antrian, index) => (
+                                  <li 
+                                    key={antrian.id_antrian || index} 
+                                    className={`py-2 px-3 flex items-center justify-between ${
+                                      antrian.mahasiswa_nim === nimMahasiswa 
+                                        ? 'bg-blue-50 font-medium' 
+                                        : 'bg-white'
+                                    }`}
+                                  >
+                                    <span className="flex items-center">
+                                      <span className="bg-slate-100 text-slate-700 w-5 h-5 rounded-full flex items-center justify-center text-xs mr-2">
+                                        {antrian.position || index + 1}
+                                      </span>
+                                      {antrian.mahasiswa_nim}
+                                    </span>
+                                    {renderStatusBadge(antrian.status_antrian)}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
                           </div>
                         )}
                       </div>
@@ -688,7 +777,7 @@ const JadwalBimbinganMahasiswa = () => {
           ))}
         </div>
       )}
-
+      
       {/* Modal Konfirmasi Ambil Antrian */}
       {isModalOpen && selectedJadwal && (
         <div className="fixed inset-0 bg-none bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -811,7 +900,7 @@ const JadwalBimbinganMahasiswa = () => {
                 <button
                   onClick={handleDaftarAntrian}
                   disabled={submitting}
-                  className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors flex items-center disabled:bg-blue-400 disabled:cursor-not-allowed"
+                  className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors flex items-center gap-2 disabled:bg-blue-400 disabled:cursor-not-allowed"
                 >
                   {submitting ? (
                     <>Mendaftar...</>

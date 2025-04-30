@@ -1,71 +1,68 @@
-// Install Event
+const CACHE_NAME = "pwa-cache-v2"; // Ganti ini saat ada update
+const PRECACHE_ASSETS = [
+  "/",
+  "/index.html",
+  "/pwa-192x192.png",
+];
+
+// Install
 self.addEventListener("install", (event) => {
-  console.log("Service Worker: Installed");
+  console.log("[SW] Installing");
   event.waitUntil(
-    caches.open("v1").then((cache) => {
-      return cache.addAll([
-        "/", 
-        "/index.html",
-        "/pwa-192x192.png" // Add your icons too, otherwise push will fail when offline!
-      ]);
+    caches.open(CACHE_NAME).then((cache) => {
+      console.log("[SW] Precaching assets");
+      return cache.addAll(PRECACHE_ASSETS);
     })
   );
-  self.skipWaiting(); // Immediately activate after install
+  self.skipWaiting(); // Langsung aktif setelah install
 });
 
-// Activate Event
+// Activate
 self.addEventListener("activate", (event) => {
-  console.log("Service Worker: Activated");
+  console.log("[SW] Activating");
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cache) => {
-          if (cache !== "v1") {
-            console.log("Service Worker: Clearing Old Cache:", cache);
+          if (cache !== CACHE_NAME) {
+            console.log("[SW] Deleting old cache:", cache);
             return caches.delete(cache);
           }
         })
       );
     })
   );
-  self.clients.claim(); // Take control of open tabs immediately
+  self.clients.claim(); // Ambil alih semua tab
 });
 
-// Fetch Event (Network first, fallback to cache)
+// Fetch (Network first, fallback ke cache)
 self.addEventListener("fetch", (event) => {
   event.respondWith(
     fetch(event.request)
-      .then((response) => {
-        // Optionally, you could cache new responses here if you want
-        return response;
-      })
-      .catch(() => {
-        return caches.match(event.request);
-      })
+      .then((response) => response)
+      .catch(() => caches.match(event.request))
   );
 });
 
-// Push Notification Handler
+// Push
 self.addEventListener("push", (event) => {
-  console.log("Push event received:", event);
+  console.log("[SW] Push event received");
 
   let data = {};
-  if (event.data) {
-    try {
-      data = event.data.json();
-    } catch (error) {
-      console.error("Error parsing push event data:", error);
-    }
+  try {
+    data = event.data?.json() || {};
+  } catch (err) {
+    console.error("[SW] Push data error:", err);
   }
 
   const title = data.title || "Notifikasi Baru";
   const options = {
     body: data.body || "Anda memiliki notifikasi baru.",
-    icon: "/pwa-192x192.png", 
+    icon: "/pwa-192x192.png",
     badge: "/pwa-192x192.png",
     data: {
-      url: data.url || "/" // Used on click
-    }
+      url: data.url || "/",
+    },
   };
 
   event.waitUntil(
@@ -73,24 +70,29 @@ self.addEventListener("push", (event) => {
   );
 });
 
-// Notification Click Handler
+// Notification click
 self.addEventListener("notificationclick", (event) => {
-  console.log("Notification click received:", event);
-
+  console.log("[SW] Notification click");
   event.notification.close();
 
   event.waitUntil(
     clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
-      // Focus if tab already open
       for (const client of clientList) {
-        if (client.url === event.notification.data.url && 'focus' in client) {
+        if (client.url === event.notification.data.url && "focus" in client) {
           return client.focus();
         }
       }
-      // Otherwise open new tab
       if (clients.openWindow) {
-        return clients.openWindow(event.notification.data.url || '/');
+        return clients.openWindow(event.notification.data.url);
       }
     })
   );
+});
+
+// Tambahan penting: Agar bisa skip waiting saat ada SW baru
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "SKIP_WAITING") {
+    console.log("[SW] SKIP_WAITING message received");
+    self.skipWaiting();
+  }
 });

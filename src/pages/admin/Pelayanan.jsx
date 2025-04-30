@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import { format } from "date-fns";
-import { Eye, Pencil, X, FileText, Calendar, User, Tag, Clock, Download, RefreshCw } from "lucide-react";
+import { Eye, Pencil, X, FileText, Calendar, User, Tag, Clock, Download, Wifi, WifiOff } from "lucide-react";
 import { toast } from "react-toastify";
 
 const STATUS_OPTIONS = ["Menunggu", "Diproses", "Selesai", "Tolak"];
@@ -23,6 +23,8 @@ const AdminPelayanan = () => {
   const [selectedPdf, setSelectedPdf] = useState(null);
   const [pdfModalOpen, setPdfModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [socketConnected, setSocketConnected] = useState(false); // WebSocket connection status
+  const socketRef = useRef(null); // WebSocket reference
 
   const token = JSON.parse(localStorage.getItem("auth"))?.token;
 
@@ -79,6 +81,59 @@ const AdminPelayanan = () => {
       setIsLoading(false);
     }
   };
+
+  // WebSocket setup
+  useEffect(() => {
+    if (!token) return;
+
+    // Initialize WebSocket connection
+    socketRef.current = new WebSocket(`ws://localhost:8000/ws?token=${token}`);
+
+    socketRef.current.onopen = () => {
+      console.log("✅ WebSocket connected");
+      setSocketConnected(true);
+    };
+
+    socketRef.current.onmessage = async (event) => {
+      try {
+        const data = JSON.parse(event.data);
+
+        if (data.event === "new_pengajuan") {
+          // Fetch the latest data when a new pengajuan is received
+          toast.info("Pengajuan baru diterima");
+          await fetchData();
+        }
+      } catch (error) {
+        console.error("Error parsing WebSocket message:", error);
+      }
+    };
+
+    socketRef.current.onclose = () => {
+      console.log("❌ WebSocket disconnected");
+      setSocketConnected(false);
+
+      // Attempt to reconnect after 5 seconds
+      setTimeout(() => {
+        if (socketRef.current?.readyState === WebSocket.CLOSED) {
+          console.log("🔄 Attempting to reconnect WebSocket...");
+          socketRef.current = null;
+        }
+      }, 5000);
+    };
+
+    socketRef.current.onerror = (error) => {
+      console.error("WebSocket error:", error);
+      setSocketConnected(false);
+    };
+
+    // Cleanup on component unmount
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.close();
+        socketRef.current = null;
+      }
+    };
+  }, [token]);
 
   useEffect(() => {
     fetchData();
@@ -164,14 +219,19 @@ const AdminPelayanan = () => {
     <div className="space-y-6 bg-gray-50 p-6 rounded-xl">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-800">Kelola Pengajuan Layanan</h1>
-        <button
-          onClick={fetchData}
-          disabled={isLoading}
-          className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
-        >
-          <RefreshCw size={16} className={`mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-          {isLoading ? 'Memuat...' : 'Refresh Data'}
-        </button>
+        <div className={`flex items-center ${socketConnected ? "text-green-600" : "text-gray-400"}`}>
+          {socketConnected ? (
+            <>
+              <Wifi size={16} className="mr-1" />
+              <span className="text-xs">Realtime aktif</span>
+            </>
+          ) : (
+            <>
+              <WifiOff size={16} className="mr-1" />
+              <span className="text-xs">Menghubungkan...</span>
+            </>
+          )}
+        </div>
       </div>
 
       <div className="bg-white rounded-xl shadow-md overflow-hidden">

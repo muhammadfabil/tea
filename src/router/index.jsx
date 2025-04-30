@@ -38,6 +38,14 @@ import IsiDataDosen from "../pages/mahasiswa/IsiDataDosen";
 import LayananAdmin from "../pages/admin/LayananAdministrasi";
 import RegisterMahasiswa from "../pages/common/Register";
 import ListAdmin from "../pages/admin/ListAdmin";
+import News from "../pages/common/News";
+import NewsAdmin from "../pages/admin/NewsAdmin";
+import ProfileMahasiswa from "../pages/mahasiswa/Profile";
+import ResetPass from "../pages/common/ResetPassRequest";
+import ResetPassPage from "../pages/common/ResetPassPage";
+import ResetPassRequest from "../pages/common/ResetPassRequest";
+import testrefresh from "../pages/mahasiswa/TestRefresh";
+import TestRefresh from "../pages/mahasiswa/TestRefresh";
 
 const AppRouter = () => {
   return (
@@ -47,6 +55,9 @@ const AppRouter = () => {
   <Route path="/login" element={<Login />} />
   <Route path="/register" element={<RegisterMahasiswa />} />
   <Route path="/antrean-dosen" element={<AntreanDosen />} />
+  <Route path="/reset-pass" element={<ResetPassRequest />} />  {/* Fixed the element syntax */}
+  <Route path="/reset-password" element={<ResetPassPage />} />  {/* Fixed the element syntax */}
+ 
 
   {/* 🎓 Rute Mahasiswa (Hanya untuk mahasiswa) */}
   <Route element={<ProtectedRoute allowedRoles={["mahasiswa"]} />}>
@@ -56,6 +67,10 @@ const AppRouter = () => {
       <Route path="ajukan-layanan" element={<AjukanPelayanan />} />
       <Route path="status-layanan" element={<StatusPelayanan />} />
       <Route path="pilih-jadwal" element={<PilihJadwal />} />
+      <Route path="news" element={<News />} />
+      <Route path="profile" element={<ProfileMahasiswa />} />  {/* Fixed the Profile route */}
+      <Route path="refresh" element={<TestRefresh />} />  {/* Fixed the Profile route */}
+     
     </Route>
   </Route>
 
@@ -77,6 +92,7 @@ const AppRouter = () => {
       <Route path="pelayanan" element={<AdminPelayanan />} />
       <Route path="manajemen-pelayanan" element={<LayananAdmin />} />
       <Route path="list-admin" element={<ListAdmin/>} />
+      <Route path="news" element={<NewsAdmin />} />
     </Route>
   </Route>
 

@@ -1,13 +1,14 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-    content: ["./index.html", "./src/**/*.{js,jsx}"],
-    theme: {
-      extend: {
-        colors: {
-          primary: "#1277C9",
-        },
+  content: ["./index.html", "./src/**/*.{js,jsx}"],
+  theme: {
+    extend: {
+      colors: {
+        primary: "#1277C9",
       },
     },
-    plugins: [],
-  };
-  
+  },
+  plugins: [
+    require('@tailwindcss/typography'), // Tambahkan plugin ini
+  ],
+};
