@@ -37,7 +37,11 @@ export function registerServiceWorker() {
         });
 
       // 🔁 Optional: force reload SW saat user kembali ke halaman
+      let isReloading = false; // Tambahkan flag untuk mencegah looping
       navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (isReloading) return; // Cegah reload berulang
+        isReloading = true;
+
         console.log('Controller changed - reloading page...');
         window.location.reload();
       });
@@ -47,11 +51,10 @@ export function registerServiceWorker() {
 
 // Notifikasi versi baru tersedia — bisa kamu ubah jadi pakai modal/toast
 function notifyUserToRefresh() {
-  if (confirm('Versi baru tersedia. Muat ulang untuk memperbarui?')) {
-    navigator.serviceWorker.getRegistration().then((reg) => {
-      if (reg.waiting) {
-        reg.waiting.postMessage({ type: 'SKIP_WAITING' });
-      }
-    });
-  }
+  // Silent update without prompting user
+  navigator.serviceWorker.getRegistration().then((reg) => {
+    if (reg.waiting) {
+      reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+    }
+  });
 }

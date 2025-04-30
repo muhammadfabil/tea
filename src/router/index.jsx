@@ -41,11 +41,11 @@ import ListAdmin from "../pages/admin/ListAdmin";
 import News from "../pages/common/News";
 import NewsAdmin from "../pages/admin/NewsAdmin";
 import ProfileMahasiswa from "../pages/mahasiswa/Profile";
-import ResetPass from "../pages/common/ResetPassRequest";
+
 import ResetPassPage from "../pages/common/ResetPassPage";
 import ResetPassRequest from "../pages/common/ResetPassRequest";
-import testrefresh from "../pages/mahasiswa/TestRefresh";
-import TestRefresh from "../pages/mahasiswa/TestRefresh";
+
+
 
 const AppRouter = () => {
   return (
@@ -69,7 +69,6 @@ const AppRouter = () => {
       <Route path="pilih-jadwal" element={<PilihJadwal />} />
       <Route path="news" element={<News />} />
       <Route path="profile" element={<ProfileMahasiswa />} />  {/* Fixed the Profile route */}
-      <Route path="refresh" element={<TestRefresh />} />  {/* Fixed the Profile route */}
      
     </Route>
   </Route>
