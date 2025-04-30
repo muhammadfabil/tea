@@ -144,3 +144,11 @@ self.addEventListener("notificationclick", (event) => {
     })
   );
 });
+
+self.addEventListener('controllerchange', () => {
+  console.log('Controller changed');
+  // Only reload in production
+  if (process.env.NODE_ENV !== 'development') {
+    window.location.reload();
+  }
+});
