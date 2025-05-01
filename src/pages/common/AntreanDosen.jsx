@@ -33,7 +33,7 @@ const AntreanDosen = () => {
 
     // Setup WebSocket connection
     const connectWebSocket = () => {
-      wsRef.current = new WebSocket(`${API.replace(/^https?/, 'wss')}/ws/public`);
+      wsRef.current = new WebSocket(`${API.replace(/^https?/, 'ws')}/ws/public`);
 
       wsRef.current.onopen = () => {
         console.log("WebSocket connected");

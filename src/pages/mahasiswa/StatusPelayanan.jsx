@@ -111,7 +111,7 @@ const StatusPelayanan = () => {
     }
 
     // Create WebSocket connection
-    const ws = new WebSocket(`${API.replace(/^https/, 'wss:')}/ws?token=${token}`);
+    const ws = new WebSocket(`${API.replace(/^https/, 'ws:')}/ws?token=${token}`);
     socketRef.current = ws;
     
     // Connection opened

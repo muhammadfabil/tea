@@ -88,7 +88,7 @@ const AdminPelayanan = () => {
     if (!token) return;
 
     // Initialize WebSocket connection
-    socketRef.current = new WebSocket(`${API.replace(/^https?/, 'wss')}/ws?token=${token}`);
+    socketRef.current = new WebSocket(`${API.replace(/^https?/, 'ws')}/ws?token=${token}`);
 
     socketRef.current.onopen = () => {
       console.log("✅ WebSocket connected");
