@@ -44,6 +44,7 @@ import ProfileMahasiswa from "../pages/mahasiswa/Profile";
 
 import ResetPassPage from "../pages/common/ResetPassPage";
 import ResetPassRequest from "../pages/common/ResetPassRequest";
+import ProfileDosen from "../pages/dosen/ProfileDosen";
 
 
 
@@ -79,6 +80,7 @@ const AppRouter = () => {
       <Route path="dashboard" element={<DashboardDosen />} />
       <Route path="kelola-jadwal" element={<KelolaJadwal />} />
       <Route path="daftar-mahasiswa" element={<DaftarMahasiswa />} />
+      <Route path="profil" element={<ProfileDosen />} /> {/* Fixed the ProfileDosen element syntax */}
     </Route>
   </Route>
 

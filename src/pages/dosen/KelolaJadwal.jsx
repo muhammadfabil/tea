@@ -167,7 +167,7 @@ const KelolaWaktuBimbingan = () => {
     if (!token) return;
     
     // Create WebSocket connection with correct endpoint
-    socketRef.current = new WebSocket(`${API.replace('https', 'wss')}/ws?token=${token}`);
+    socketRef.current = new WebSocket(`${API.replace('https', 'ws')}/ws?token=${token}`);
     
     // Connection opened
     socketRef.current.addEventListener('open', (event) => {

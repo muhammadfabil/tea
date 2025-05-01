@@ -33,7 +33,7 @@ const AntreanDosen = () => {
 
     // Setup WebSocket connection
     const connectWebSocket = () => {
-      wsRef.current = new WebSocket(`${API.replace(/^https?/, 'wss')}/ws/public`);
+      wsRef.current = new WebSocket(`${API.replace(/^https?/, 'ws')}/ws/public`);
 
       wsRef.current.onopen = () => {
         console.log("WebSocket connected");
@@ -47,7 +47,7 @@ const AntreanDosen = () => {
           if (data && data["Inisial Dosen"]) {
             updateDosenStatus(
               data["Inisial Dosen"],
-              data["Status Kehadrian"], 
+              data["Status Kehadiran"], // Perbaikan nama properti (sebelumnya "Status Kehadrian")
               data["Nama Dosen"],
               data["Keterangan"] || "" 
             );
@@ -83,12 +83,14 @@ const AntreanDosen = () => {
 
   // Update dosen status when new WebSocket data is received
   const updateDosenStatus = (inisial, status, nama, keterangan) => {
+    console.log(`Updating dosen ${inisial} status to:`, status, "keterangan:", keterangan);
+    
     setDosenList((prevList) => {
       return prevList.map((dosen) => {
         if (dosen.alias === inisial) {
           return {
             ...dosen,
-            status_kehadiran: status,
+            status_kehadiran: status, // Pastikan nilai status di-pass ke properti yang benar
             name: nama || dosen.name,
             keterangan: keterangan || dosen.keterangan
           };

@@ -95,7 +95,7 @@ const JadwalBimbinganMahasiswa = () => {
     }
 
     // Create WebSocket connection with current token from AuthContext
-    socketRef.current = new WebSocket(`${API.replace('https', 'wss')}/ws?token=${token}`);
+    socketRef.current = new WebSocket(`${API.replace('https', 'ws')}/ws?token=${token}`);
 
     // Connection opened
     socketRef.current.addEventListener("open", () => {

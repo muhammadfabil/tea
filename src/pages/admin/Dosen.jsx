@@ -73,7 +73,7 @@ const AdminDosen = () => {
     e.preventDefault();
     try {
       setLoading(true);
-      await axios.put(
+      const response = await axios.put(
         `${API}/dosen/${editDosen.alias}`,
         {
           ...editDosen,
@@ -83,10 +83,27 @@ const AdminDosen = () => {
           headers: { Authorization: `Bearer ${getToken()}` },
         }
       );
-      setShowEditModal(false);
-      setEditDosen(null);
-      fetchDosen();
-      toast.success("Dosen berhasil diperbarui");
+
+      if (response.status === 200) {
+        // Ambil data hasil update dari respons API
+        const updatedDosenData = response.data.data;
+        
+        if (updatedDosenData) {
+          // Perbarui data di state dengan data terbaru dari server
+          setDosenList(prevList => 
+            prevList.map(dosen => 
+              dosen.id === editDosen.id ? updatedDosenData : dosen
+            )
+          );
+        } else {
+          // Jika tidak mendapat data baru, tetap refresh seluruh data
+          fetchDosen();
+        }
+        
+        setShowEditModal(false);
+        setEditDosen(null);
+        toast.success("Dosen berhasil diperbarui");
+      }
     } catch (error) {
       console.error("Gagal update dosen:", error);
       toast.error("Gagal update dosen");
@@ -132,42 +149,80 @@ const AdminDosen = () => {
 
   const toggleStatus = async (dosen) => {
     try {
-      // Mark this specific item as toggling status
+      // Catat alias dosen yang sedang diubah untuk pencocokan yang lebih aman
+      const targetAlias = dosen.alias;
+      
+      // Mark this specific item as toggling status using alias sebagai identifier yang lebih aman
       setDosenList(prevList => 
         prevList.map(item => 
-          item.id === dosen.id ? { ...item, isTogglingStatus: true } : item
+          item.alias === targetAlias ? { ...item, isTogglingStatus: true } : item
         )
       );
       
       // Toggle the boolean status
       const newStatus = !dosen.status_kehadiran;
       
+      // Debug logs
+      console.log(`Toggling status for dosen: ${dosen.name} (${targetAlias})`);
+      console.log(`Current status: ${dosen.status_kehadiran}, New status: ${newStatus}`);
+      
       // Create payload with all required fields
       const payload = {
-        ...dosen,
+        nomor_induk: dosen.nomor_induk,
+        name: dosen.name,
+        alias: dosen.alias,
+        email: dosen.email,
+        keterangan: dosen.keterangan,
         status_kehadiran: newStatus
       };
       
-      await axios.put(`${API}/dosen/${dosen.alias}`, payload, {
+      console.log("Sending payload:", payload);
+      
+      const response = await axios.put(`${API}/dosen/${targetAlias}`, payload, {
         headers: { Authorization: `Bearer ${getToken()}` },
       });
       
-      // Update local state to reflect the change
-      setDosenList(prevList => 
-        prevList.map(item => 
-          item.id === dosen.id ? { ...item, status_kehadiran: newStatus, isTogglingStatus: false } : item
-        )
-      );
+      console.log("API Response:", response.data);
       
-      toast.success(`Status kehadiran berhasil ${newStatus ? 'diaktifkan' : 'dinonaktifkan'}`);
+      // Check for response success and get updated data
+      if (response.status === 200) {
+        const updatedDosenData = response.data.data;
+        
+        if (updatedDosenData) {
+          console.log("Updated data from API:", updatedDosenData);
+          
+          // Update with data from server response, using alias untuk matching
+          setDosenList(prevList => 
+            prevList.map(item => 
+              item.alias === targetAlias ? 
+                { ...item, ...updatedDosenData, isTogglingStatus: false } : 
+                item
+            )
+          );
+        } else {
+          // Fallback to our local update if no data in response
+          console.log("No data in response, using local update");
+          setDosenList(prevList => 
+            prevList.map(item => 
+              item.alias === targetAlias ? { 
+                ...item, 
+                status_kehadiran: newStatus, 
+                isTogglingStatus: false 
+              } : item
+            )
+          );
+        }
+        
+        toast.success(`Status kehadiran ${dosen.name} berhasil ${newStatus ? 'diaktifkan' : 'dinonaktifkan'}`);
+      }
     } catch (error) {
       console.error("Gagal mengubah status kehadiran:", error);
-      toast.error("Gagal mengubah status kehadiran");
+      toast.error(`Gagal mengubah status kehadiran ${dosen.name}`);
       
       // Reset toggling state on error
       setDosenList(prevList => 
         prevList.map(item => 
-          item.id === dosen.id ? { ...item, isTogglingStatus: false } : item
+          item.alias === dosen.alias ? { ...item, isTogglingStatus: false } : item
         )
       );
     }
