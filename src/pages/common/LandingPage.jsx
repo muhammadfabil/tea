@@ -148,15 +148,7 @@ const LandingPage = () => {
             </div>
             
             {/* Feature 6 */}
-            <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-all">
-              <div className="bg-blue-100 w-12 h-12 rounded-lg flex items-center justify-center mb-6">
-                <Shield className="w-6 h-6 text-blue-600" />
-              </div>
-              <h3 className="text-xl font-bold text-slate-800 mb-3">Keamanan Tinggi</h3>
-              <p className="text-slate-600">
-                Dilengkapi dengan sistem keamanan berlapis untuk menjaga data dan privasi pengguna.
-              </p>
-            </div>
+           
           </div>
         </div>
       </section>

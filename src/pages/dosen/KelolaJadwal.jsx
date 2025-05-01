@@ -734,7 +734,7 @@ const KelolaWaktuBimbingan = () => {
 
       {/* Modal Detail Jadwal */}
       {isDetailModalOpen && selectedJadwal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-none bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl p-6 relative animate-fadeIn overflow-y-auto max-h-[90vh]">
             {/* Header Modal */}
             <div className="flex justify-between items-center pb-4 border-b border-gray-200 mb-6">
@@ -977,7 +977,7 @@ const KelolaWaktuBimbingan = () => {
 
       {/* Modal Tambah/Edit Jadwal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-none bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 relative animate-fadeIn">
             <button 
               onClick={() => setIsModalOpen(false)}
@@ -1139,7 +1139,7 @@ const KelolaWaktuBimbingan = () => {
 
       {/* Modal Preview File */}
       {previewFile && (
-        <div className={`fixed inset-0 bg-black backdrop-blur-sm bg-opacity-75 flex items-center justify-center z-[60] ${isPreviewFullscreen ? 'p-0' : 'p-8'}`}>
+        <div className={`fixed inset-0 bg-none backdrop-blur-sm bg-opacity-75 flex items-center justify-center z-[60] ${isPreviewFullscreen ? 'p-0' : 'p-8'}`}>
           <div className={`bg-white rounded-lg shadow-2xl relative animate-fadeIn ${isPreviewFullscreen ? 'w-full h-full rounded-none' : 'w-full max-w-5xl max-h-[90vh]'}`}>
             {/* Header */}
             <div className="flex justify-between items-center p-4 border-b border-gray-200">
