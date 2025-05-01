@@ -140,17 +140,7 @@ const MahasiswaLayout = () => {
                 <span>My Profile</span>
               </div>
             </NavLink>
-            <NavLink
-              to="/mahasiswa/refresh"
-              className={({ isActive }) =>
-                `${navItem} ${isActive ? activeNav : "text-gray-700"}`
-              }
-            >
-              <div className="flex items-center">
-                <CgProfile className="w-5 h-5 mr-3" />
-                <span>TEST</span>
-              </div>
-            </NavLink>
+            
           </nav>
         </div>
 
