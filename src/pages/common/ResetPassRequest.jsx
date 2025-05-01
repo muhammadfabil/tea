@@ -6,15 +6,17 @@ const ResetPassRequest = () => {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [status, setStatus] = useState({ type: '', message: '' });
+  const API = import.meta.env.VITE_API_BASE_URL;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setStatus({ type: '', message: '' });
 
+
     try {
       const response = await axios.post(
-        `https://d1raf3a33gcfqd.cloudfront.net/auth/forgot-password?email=${encodeURIComponent(email)}`,
+        `${API}/auth/forgot-password?email=${encodeURIComponent(email)}`,
         '',
         {
           headers: {

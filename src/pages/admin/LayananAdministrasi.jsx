@@ -20,6 +20,7 @@ const getToken = () => {
   return authData ? JSON.parse(authData).token : null;
 };
 
+const API = import.meta.env.VITE_API_BASE_URL;
 const KelolaLayanan = () => {
   const [layanan, setLayanan] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
@@ -40,7 +41,7 @@ const KelolaLayanan = () => {
   const fetchLayanan = async () => {
     try {
       setIsLoading(true);
-      const res = await axios.get("https://d1raf3a33gcfqd.cloudfront.net/layanan/jenis"); // Updated URL
+      const res = await axios.get(`${API}/layanan/jenis`);
       setLayanan(res.data);
     } catch (err) {
       console.error(err);
@@ -107,7 +108,7 @@ const handleToggleStatus = async (id, currentStatus, item) => {
       url_file: item.url_file
     };
     
-    await axios.put(`https://d1raf3a33gcfqd.cloudfront.net/layanan/jenis/${id}`, payload); // Updated URL
+    await axios.put(`${API}/layanan/jenis/${id}`, payload);
     
     // Update local state to reflect the change immediately
     setLayanan(prevLayanan => 
@@ -167,10 +168,10 @@ const handleToggleStatus = async (id, currentStatus, item) => {
       };
 
       if (editId) {
-        await axios.put(`https://d1raf3a33gcfqd.cloudfront.net/layanan/jenis/${editId}`, payload); // Fixed URL
+        await axios.put(`${API}/layanan/jenis/${editId}`, payload);
         toast.success("Layanan berhasil diperbarui");
       } else {
-        await axios.post("https://d1raf3a33gcfqd.cloudfront.net/layanan/jenis", payload, { // Updated URL
+        await axios.post(`${API}/layanan/jenis`, payload, {
           headers: {
             Authorization: `Bearer ${getToken()}`,
           },
@@ -209,7 +210,7 @@ const handleToggleStatus = async (id, currentStatus, item) => {
   const handleDelete = async () => {
     try {
       setIsLoading(true);
-      await axios.delete(`https://d1raf3a33gcfqd.cloudfront.net/layanan/jenis/${deleteItemId}`); // Fixed URL
+      await axios.delete(`${API}/layanan/jenis/${deleteItemId}`); // Fixed URL
       toast.success("Layanan berhasil dihapus");
       fetchLayanan();
       setIsDeleteModalOpen(false);

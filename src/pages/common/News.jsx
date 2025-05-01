@@ -15,6 +15,7 @@ const News = () => {
   const [selectedNews, setSelectedNews] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const API = import.meta.env.VITE_API_BASE_URL;
 
   useEffect(() => {
     fetchNews();
@@ -24,7 +25,7 @@ const News = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await axios.get('https://d1raf3a33gcfqd.cloudfront.net/news');
+      const response = await axios.get(`${API}/news`);
       setNews(response.data);
     } catch (err) {
       console.error('Error fetching news:', err);

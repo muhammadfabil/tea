@@ -6,6 +6,8 @@ const NewsList = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const API = import.meta.env.VITE_API_BASE_URL;
+
   useEffect(() => {
     const fetchNews = async () => {
       try {
@@ -13,7 +15,7 @@ const NewsList = () => {
         setError(null);
 
         // Pastikan URL menggunakan HTTPS
-        const response = await axios.get('https://ec2-13-236-194-123.ap-southeast-2.compute.amazonaws.com/news');
+        const response = await axios.get(`${API}/news`);
         setNews(response.data);
       } catch (err) {
         console.error('Error fetching news:', err);

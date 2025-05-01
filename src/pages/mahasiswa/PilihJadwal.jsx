@@ -22,6 +22,8 @@ const JadwalBimbinganMahasiswa = () => {
   const [selectedAntrianDetail, setSelectedAntrianDetail] = useState(null);
   const [processingAntrian, setProcessingAntrian] = useState(false);
   const [processingAntrianId, setProcessingAntrianId] = useState(null);
+
+  const API = import.meta.env.VITE_API_BASE_URL;
   
   // State untuk modal konfirmasi
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -93,7 +95,7 @@ const JadwalBimbinganMahasiswa = () => {
     }
 
     // Create WebSocket connection with current token from AuthContext
-    socketRef.current = new WebSocket(`wss://d1raf3a33gcfqd.cloudfront.net/ws?token=${token}`);
+    socketRef.current = new WebSocket(`${API.replace('https', 'wss')}/ws?token=${token}`);
 
     // Connection opened
     socketRef.current.addEventListener("open", () => {
@@ -214,7 +216,7 @@ const JadwalBimbinganMahasiswa = () => {
         setNimMahasiswa(nim);
 
         // Fetch relation data for the logged in student
-        const relationResponse = await fetch(`https://d1raf3a33gcfqd.cloudfront.net/relation/mahasiswa/${nim}`);
+        const relationResponse = await fetch(`$/relation/mahasiswa/${nim}`);
         
         if (!relationResponse.ok) {
           throw new Error(`Error fetching relations: ${relationResponse.statusText}`);
@@ -232,7 +234,7 @@ const JadwalBimbinganMahasiswa = () => {
         const dosenSchedules = await Promise.all(
           relationData.map(async (relation) => {
             try {
-              const scheduleResponse = await fetch(`https://d1raf3a33gcfqd.cloudfront.net/waktu_bimbingan/dosen/${relation.dosen_alias}`); // Updated URL
+              const scheduleResponse = await fetch(`${API}/waktu_bimbingan/dosen/${relation.dosen_alias}`); // Updated URL
               const scheduleData = await scheduleResponse.json();
               
               return {
@@ -366,7 +368,7 @@ const JadwalBimbinganMahasiswa = () => {
         return;
       }
 
-      const endpoint = `https://d1raf3a33gcfqd.cloudfront.net/antrian/f/${antrianId}`; // Updated URL
+      const endpoint = `${API}/antrian/f/${antrianId}`; // Updated URL
       const response = await fetch(endpoint, {
         method: "PUT",
         headers: {
@@ -446,7 +448,7 @@ const JadwalBimbinganMahasiswa = () => {
         mahasiswa_nim: nimMahasiswa
       });
       
-      const response = await fetch(`https://d1raf3a33gcfqd.cloudfront.net/antrian/?${queryParams.toString()}`, {
+      const response = await fetch(`${API}/antrian/?${queryParams.toString()}`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${currentToken}`

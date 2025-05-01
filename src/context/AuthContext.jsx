@@ -3,6 +3,7 @@ import { toast } from "react-toastify";
 import axios from "axios";
 
 const AuthContext = createContext();
+const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -69,7 +70,7 @@ export const AuthProvider = ({ children }) => {
       if (!stored?.refresh_token) throw new Error("Refresh token tidak ditemukan");
 
       const response = await axios.post(
-        `https://d1raf3a33gcfqd.cloudfront.net/auth/refresh?token=${stored.refresh_token}`
+        `${BASE_URL}/auth/refresh?token=${stored.refresh_token}`
       );
 
       const { access_token, refresh_token } = response.data;
@@ -93,18 +94,14 @@ export const AuthProvider = ({ children }) => {
     setToken(null);
     setIsAuthenticated(false);
     setAuthError(null);
-    if (sessionWarningTimer) {
-      clearTimeout(sessionWarningTimer);
-    }
-    if (autoRefreshTimer) {
-      clearTimeout(autoRefreshTimer);
-    }
+    if (sessionWarningTimer) clearTimeout(sessionWarningTimer);
+    if (autoRefreshTimer) clearTimeout(autoRefreshTimer);
   };
 
   const refreshProfile = async () => {
     try {
       if (!token) return;
-      const res = await axios.get("https://d1raf3a33gcfqd.cloudfront.net/auth/me", {
+      const res = await axios.get(`${BASE_URL}/auth/me`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setUser(res.data);
@@ -174,7 +171,7 @@ export const AuthProvider = ({ children }) => {
         authError,
         refreshProfile,
         loading,
-        refreshToken, // expose refreshToken if needed
+        refreshToken,
       }}
     >
       {children}

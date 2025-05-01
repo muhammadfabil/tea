@@ -13,6 +13,7 @@ const RegisterMahasiswa = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const API = import.meta.env.VITE_API_BASE_URL;
 
   const validateForm = () => {
     if (!nim || !nama || !email || !password) {
@@ -50,7 +51,7 @@ const RegisterMahasiswa = () => {
     }
 
     try {
-      const res = await axios.post("https://d1raf3a33gcfqd.cloudfront.net/mahasiswa", {
+      const res = await axios.post(`${API}/mahasiswa`, {
         nim,
         nama,
         email,

@@ -13,6 +13,7 @@ const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { login, isAuthenticated, authError, user, refreshToken } = useAuth();
+  const API = import.meta.env.VITE_API_BASE_URL;
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -58,7 +59,7 @@ const Login = () => {
 
     try {
       // Step 1: Login untuk mendapatkan token
-      const loginResponse = await axios.post("https://d1raf3a33gcfqd.cloudfront.net/auth/login", {
+      const loginResponse = await axios.post(`${API}/auth/login`, {
         email: email,
         password: password,
       });
@@ -66,7 +67,7 @@ const Login = () => {
       const { access_token, refresh_token } = loginResponse.data;
 
       // Step 2: Ambil data profil pengguna
-      const profileResponse = await axios.get("https://d1raf3a33gcfqd.cloudfront.net/auth/me", {
+      const profileResponse = await axios.get(`${API}/auth/me`, {
         headers: {
           Authorization: `Bearer ${access_token}`,
         },

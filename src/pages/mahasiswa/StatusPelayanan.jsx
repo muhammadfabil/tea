@@ -28,6 +28,8 @@ const StatusPelayanan = () => {
     return auth?.token || "";
   });
 
+  const API = import.meta.env.VITE_API_BASE_URL;
+
   // Sync token jika berubah di localStorage (misal karena refresh token)
   useEffect(() => {
     const interval = setInterval(() => {
@@ -109,7 +111,7 @@ const StatusPelayanan = () => {
     }
 
     // Create WebSocket connection
-    const ws = new WebSocket(`wss://d1raf3a33gcfqd.cloudfront.net/ws?token=${token}`);
+    const ws = new WebSocket(`${API.replace(/^https/, 'wss:')}/ws?token=${token}`);
     socketRef.current = ws;
     
     // Connection opened
@@ -212,7 +214,7 @@ const StatusPelayanan = () => {
   const fetchMahasiswaName = async (nim) => {
     const { token } = getAuthData();
     try {
-      const response = await axios.get(`https://d1raf3a33gcfqd.cloudfront.net/mahasiswa/${nim}`, { // Updated URL
+      const response = await axios.get(`${API}/mahasiswa/${nim}`, { // Updated URL
         headers: { Authorization: `Bearer ${token}` },
       });
       return response.data.nama;
@@ -234,7 +236,7 @@ const StatusPelayanan = () => {
       }
 
       // Fetch jenis layanan untuk mendapatkan nama layanan berdasarkan ID
-      const jenisLayananResponse = await axios.get(`https://d1raf3a33gcfqd.cloudfront.net/layanan/jenis`, { // Updated URL
+      const jenisLayananResponse = await axios.get(`${API}/layanan/jenis`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       
@@ -248,7 +250,7 @@ const StatusPelayanan = () => {
       setJenisLayanan(jenisLayananObject);
 
       // Fetch pengajuan data
-      const response = await axios.get(`https://d1raf3a33gcfqd.cloudfront.net/layanan/pengajuan/${nim}`, {
+      const response = await axios.get(`${API}/layanan/pengajuan/${nim}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       

@@ -50,6 +50,8 @@ const IsiDataDosen = () => {
     dosen_alias: "",
     role: "",
   });
+
+  const API = import.meta.env.VITE_API_BASE_URL;
   
   const [searchQuery, setSearchQuery] = useState("");
   const [isEditing, setIsEditing] = useState(null); // id relasi
@@ -72,7 +74,7 @@ const IsiDataDosen = () => {
   const fetchDosen = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("https://d1raf3a33gcfqd.cloudfront.net/dosen/all"); // Updated URL
+      const res = await axios.get(`${API}/dosen/all`);
       setDaftarDosen(res.data);
     } catch (err) {
       toast.error("Gagal memuat data dosen");
@@ -84,7 +86,7 @@ const IsiDataDosen = () => {
   const fetchRelations = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`https://d1raf3a33gcfqd.cloudfront.net/relation/mahasiswa/${nim}`); // Updated URL
+      const res = await axios.get(`${API}/relation/mahasiswa/${nim}`);
       setRelations(res.data);
     } catch (err) {
       toast.error("Gagal memuat relasi dosen");
@@ -127,12 +129,12 @@ const IsiDataDosen = () => {
       setLoading(true);
       if (isEditing) {
         await axios.put(
-          `https://d1raf3a33gcfqd.cloudfront.net/relation/${isEditing}`, // Updated URL
+          `${API}/relation/${isEditing}`,
           payload
         );
         toast.success("Data dosen berhasil diperbarui");
       } else {
-        await axios.post("https://d1raf3a33gcfqd.cloudfront.net/relation/", payload);
+        await axios.post(`${API}/relation/`, payload);
         toast.success("Data dosen berhasil ditambahkan");
       }
       setFormData({ dosen_alias: "", role: "" });
@@ -150,7 +152,7 @@ const IsiDataDosen = () => {
   const handleDelete = async (id) => {
     try {
       setLoading(true);
-      await axios.delete(`https://d1raf3a33gcfqd.cloudfront.net/relation/${id}`);
+      await axios.delete(`${API}/relation/${id}`);
       toast.success("Relasi berhasil dihapus");
       setConfirmDelete(null);
       fetchRelations();

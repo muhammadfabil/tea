@@ -32,6 +32,9 @@ const ProfileMahasiswa = () => {
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [saving, setSaving] = useState(false);
 
+  const API = import.meta.env.VITE_API_BASE_URL;
+  
+
   // Get nimMahasiswa from localStorage
   const getNimMahasiswa = () => {
     try {
@@ -56,7 +59,7 @@ const ProfileMahasiswa = () => {
 
       try {
         setLoading(true);
-        const response = await axios.get(`https://d1raf3a33gcfqd.cloudfront.net/mahasiswa/${nim}`); // Updated URL
+        const response = await axios.get(`${API}/mahasiswa/${nim}`);
         setProfile(response.data);
         setFormData({
           nama: response.data.nama || '',
@@ -124,7 +127,7 @@ const ProfileMahasiswa = () => {
 
       // Send request to backend
       const response = await axios.put(
-        `https://d1raf3a33gcfqd.cloudfront.net/mahasiswa/${nim}`,
+        `${API}/mahasiswa/${nim}`,
         updateData,
         {
           headers: {

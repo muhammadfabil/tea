@@ -13,6 +13,7 @@ const ResetPassPage = () => {
   const [status, setStatus] = useState({ type: '', message: '' });
   const location = useLocation();
   const navigate = useNavigate();
+  const API = import.meta.env.VITE_API_BASE_URL;
 
   useEffect(() => {
     // Extract token from URL query parameters
@@ -55,7 +56,7 @@ const ResetPassPage = () => {
 
     try {
       // Using query parameters instead of JSON body
-      const url = `https://d1raf3a33gcfqd.cloudfront.net/auth/reset-password?token=${encodeURIComponent(token)}&new_password=${encodeURIComponent(password)}`;
+      const url = `${API}/auth/reset-password?token=${encodeURIComponent(token)}&new_password=${encodeURIComponent(password)}`;
       
       const response = await axios.post(
         url,

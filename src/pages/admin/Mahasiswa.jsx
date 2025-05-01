@@ -22,6 +22,8 @@ const AdminMahasiswa = () => {
     return authData ? JSON.parse(authData).token : null;
   };
 
+  const API = import.meta.env.VITE_API_BASE_URL;
+
   const handleDeleteFromDetail = () => {
     if (detailData && detailData.mahasiswa && detailData.mahasiswa.id) {
       openDeleteConfirmation({
@@ -37,7 +39,7 @@ const AdminMahasiswa = () => {
   const fetchMahasiswa = async () => {
     try {
       const token = getAuthToken();
-      const response = await axios.get("https://d1raf3a33gcfqd.cloudfront.net/mahasiswa/all", {
+      const response = await axios.get(`${API}/mahasiswa/all`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -52,7 +54,7 @@ const AdminMahasiswa = () => {
     setIsLoading(true);
     try {
       const token = getAuthToken();
-      const response = await axios.get(`https://d1raf3a33gcfqd.cloudfront.net/mahasiswa/detail/${nim}`, { // Updated URL
+      const response = await axios.get(`${API}/mahasiswa/detail/${nim}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -86,7 +88,7 @@ const AdminMahasiswa = () => {
     setIsLoading(true);
     try {
       const token = getAuthToken();
-      const response = await axios.get(`https://d1raf3a33gcfqd.cloudfront.net/mahasiswa/detail/${mhs.nim}`, {
+      const response = await axios.get(`${API}/mahasiswa/detail/${mhs.nim}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -119,8 +121,8 @@ const AdminMahasiswa = () => {
     setIsDeleting(true);
     try {
       const token = getAuthToken();
-      console.log("Mengirim request delete ke:", `https://d1raf3a33gcfqd.cloudfront.net/mahasiswa/del/${deleteId}`); // Fixed URL
-      const response = await axios.delete(`https://d1raf3a33gcfqd.cloudfront.net/mahasiswa/del/${deleteId}`, { // Updated URL
+      console.log("Mengirim request delete ke:", `${API}/mahasiswa/del/${deleteId}`); // Fixed URL
+      const response = await axios.delete(`${API}/mahasiswa/del/${deleteId}`, { // Updated URL
         headers: {
           Authorization: `Bearer ${token}`,
         },

@@ -13,6 +13,7 @@ const DaftarMahasiswa = () => {
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
   const [bimbinganData, setBimbinganData] = useState([]);
   const [isLoadingBimbingan, setIsLoadingBimbingan] = useState(false);
+  const API = import.meta.env.VITE_API_BASE_URL;
 
   const roles = [
     "All",
@@ -32,7 +33,7 @@ const DaftarMahasiswa = () => {
         const alias = auth?.user?.profile?.alias;
         if (!alias) return;
 
-        const res = await axios.get(`https://d1raf3a33gcfqd.cloudfront.net/relation/dosen/${alias}`);
+        const res = await axios.get(`${API}/relation/dosen/${alias}`);
         setData(res.data["Daftar Mahasiswa"] || []);
       } catch (err) {
         console.error("Gagal mengambil data:", err);
@@ -47,7 +48,7 @@ const DaftarMahasiswa = () => {
   const fetchStudentDetail = async (nim) => {
     setIsLoadingDetail(true);
     try {
-      const res = await axios.get(`https://d1raf3a33gcfqd.cloudfront.net/mahasiswa/detail/${nim}`);
+      const res = await axios.get(`${API}/mahasiswa/detail/${nim}`);
       setStudentDetail(res.data);
     } catch (err) {
       console.error("Gagal mengambil detail mahasiswa:", err);
@@ -63,7 +64,7 @@ const DaftarMahasiswa = () => {
       const alias = auth?.user?.profile?.alias;
       if (!alias) return;
 
-      const res = await axios.get(`https://d1raf3a33gcfqd.cloudfront.net/waktu_bimbingan/dosen/${alias}`);
+      const res = await axios.get(`${API}/waktu_bimbingan/dosen/${alias}`);
       setBimbinganData(res.data || []);
     } catch (err) {
       console.error("Gagal mengambil data bimbingan:", err);

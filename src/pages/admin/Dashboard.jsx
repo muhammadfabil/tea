@@ -16,6 +16,7 @@ const AdminDashboard = () => {
   const [recentRequests, setRecentRequests] = useState([]);
   const [requestsLoading, setRequestsLoading] = useState(true);
 
+  const API = import.meta.env.VITE_API_BASE_URL;
   const getToken = () => {
     const authData = localStorage.getItem("auth");
     return authData ? JSON.parse(authData).token : null;
@@ -28,22 +29,22 @@ const AdminDashboard = () => {
 
       try {
         // Fetch mahasiswa stats
-        const mahasiswaRes = await axios.get("https://d1raf3a33gcfqd.cloudfront.net/mahasiswa/all", {
+        const mahasiswaRes = await axios.get(`${API}/mahasiswa/all`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         
         // Fetch dosen stats
-        const dosenRes = await axios.get("https://d1raf3a33gcfqd.cloudfront.net/dosen/all", {
+        const dosenRes = await axios.get(`${API}/dosen/all`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         
         // Fetch layanan stats
-        const layananRes = await axios.get("https://d1raf3a33gcfqd.cloudfront.net/layanan/jenis", {
+        const layananRes = await axios.get(`${API}/layanan/jenis`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         
         // Fetch pengajuan stats
-        const pengajuanRes = await axios.get("https://d1raf3a33gcfqd.cloudfront.net/layanan/pengajuan/all", {
+        const pengajuanRes = await axios.get(`${API}/layanan/pengajuan/all`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         
@@ -103,7 +104,7 @@ const AdminDashboard = () => {
   const getStudentName = async (nim) => {
     try {
       const token = getToken();
-      const response = await axios.get(`https://d1raf3a33gcfqd.cloudfront.net/mahasiswa/${nim}`, {
+      const response = await axios.get(`${API}/mahasiswa/${nim}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       return response.data.nama;

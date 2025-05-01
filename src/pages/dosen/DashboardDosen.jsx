@@ -18,6 +18,7 @@ const DashboardDosen = () => {
   const [recentJadwal, setRecentJadwal] = useState([]);
   const [recentMahasiswa, setRecentMahasiswa] = useState([]);
   const [loading, setLoading] = useState(true);
+  const API = import.meta.env.VITE_API_BASE_URL;
 
   useEffect(() => {
     const authData = localStorage.getItem("auth");
@@ -41,13 +42,13 @@ const DashboardDosen = () => {
       
       // Fetch jadwal bimbingan
       const jadwalResponse = await axios.get(
-        `https://d1raf3a33gcfqd.cloudfront.net/waktu_bimbingan/dosen/${alias}`, 
+        `${API}/waktu_bimbingan/dosen/${alias}`, 
         { headers: { Authorization: `Bearer ${token}` }}
       );
       
       // Fetch mahasiswa
       const mahasiswaResponse = await axios.get(
-        `https://d1raf3a33gcfqd.cloudfront.net/relation/dosen/${alias}`, 
+        `${API}/relation/dosen/${alias}`, 
         { headers: { Authorization: `Bearer ${token}` }}
       );
       

@@ -13,6 +13,7 @@ const STATUS_COLORS = {
   Tolak: "bg-red-100 text-red-800",
 };
 
+const API = import.meta.env.VITE_API_BASE_URL;
 const AdminPelayanan = () => {
   const [data, setData] = useState([]);
   const [jenisLayananMap, setJenisLayananMap] = useState({});
@@ -30,7 +31,7 @@ const AdminPelayanan = () => {
 
   const fetchMahasiswaName = async (nim) => {
     try {
-      const response = await axios.get(`https://d1raf3a33gcfqd.cloudfront.net/mahasiswa/${nim}`, {
+      const response = await axios.get(`${API}/mahasiswa/${nim}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       return response.data.nama;
@@ -44,10 +45,10 @@ const AdminPelayanan = () => {
     setIsLoading(true);
     try {
       const [pengajuanRes, jenisRes] = await Promise.all([
-        axios.get("https://d1raf3a33gcfqd.cloudfront.net/layanan/pengajuan/all", {
+        axios.get(`${API}/layanan/pengajuan/all`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
-        axios.get("https://d1raf3a33gcfqd.cloudfront.net/layanan/jenis", {
+        axios.get(`${API}/layanan/jenis`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
       ]);
@@ -87,7 +88,7 @@ const AdminPelayanan = () => {
     if (!token) return;
 
     // Initialize WebSocket connection
-    socketRef.current = new WebSocket(`wss://d1raf3a33gcfqd.cloudfront.net/ws?token=${token}`);
+    socketRef.current = new WebSocket(`${API.replace(/^https?/, 'wss')}/ws?token=${token}`);
 
     socketRef.current.onopen = () => {
       console.log("✅ WebSocket connected");
@@ -156,7 +157,7 @@ const AdminPelayanan = () => {
     try {
       const { id, status, catatan_admin, jadwal_pengambilan } = selectedItem;
 
-      await axios.put(`https://d1raf3a33gcfqd.cloudfront.net/layanan/pengajuan/${id}`, {
+      await axios.put(`${API}/layanan/pengajuan/${id}`, {
         status,
         catatan_admin,
         jadwal_pengambilan,

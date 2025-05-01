@@ -15,6 +15,7 @@ const KelolaAdmin = () => {
   const [editId, setEditId] = useState(null);
 
   const token = JSON.parse(localStorage.getItem("auth"))?.token;
+  const API = import.meta.env.VITE_API_BASE_URL;
 
   const headers = {
     Authorization: `Bearer ${token}`,
@@ -22,7 +23,7 @@ const KelolaAdmin = () => {
 
   const fetchAdmin = async () => {
     try {
-      const res = await axios.get("https://d1raf3a33gcfqd.cloudfront.net/admin/all", { headers }); // Updated URL
+      const res = await axios.get(`${API}/admin/all`, { headers });
       setAdminList(res.data);
     } catch (err) {
       console.error(err);
@@ -42,9 +43,7 @@ const KelolaAdmin = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const url = editId
-        ? `https://d1raf3a33gcfqd.cloudfront.net/admin/${editId}` // Updated URL
-        : "https://d1raf3a33gcfqd.cloudfront.net/admin"; // Updated URL
+      const url = editId ? `${API}/admin/${editId}` : `${API}/admin`;
       const method = editId ? axios.put : axios.post;
 
       await method(url, formData, { headers });
@@ -68,7 +67,7 @@ const KelolaAdmin = () => {
   const handleDelete = async (id) => {
     if (confirm("Yakin ingin menghapus admin ini?")) {
       try {
-        await axios.delete(`https://d1raf3a33gcfqd.cloudfront.net/admin/${id}`, { headers }); // Updated URL
+        await axios.delete(`${API}/admin/${id}`, { headers });
         toast.success("Admin dihapus.");
         fetchAdmin();
       } catch (err) {
@@ -132,7 +131,6 @@ const KelolaAdmin = () => {
         </table>
       </div>
 
-      {/* Modal */}
       {modalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/10">
           <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-lg">

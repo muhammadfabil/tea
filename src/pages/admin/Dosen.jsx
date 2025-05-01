@@ -24,6 +24,8 @@ const AdminDosen = () => {
   const [deleteItemId, setDeleteItemId] = useState(null);
   const [deleteDosenInfo, setDeleteDosenInfo] = useState(null);
 
+  const API = import.meta.env.VITE_API_BASE_URL;
+
   const getToken = () => {
     const authData = localStorage.getItem("auth");
     return authData ? JSON.parse(authData).token : null;
@@ -32,7 +34,7 @@ const AdminDosen = () => {
   const fetchDosen = async () => {
     setLoading(true);
     try {
-      const response = await axios.get("https://d1raf3a33gcfqd.cloudfront.net/dosen/all", {
+      const response = await axios.get(`${API}/dosen/all`, {
         headers: { Authorization: `Bearer ${getToken()}` },
       });
       setDosenList(response.data);
@@ -53,7 +55,7 @@ const AdminDosen = () => {
   const handleDelete = async () => {
     try {
       setLoading(true);
-      await axios.delete(`https://d1raf3a33gcfqd.cloudfront.net/dosen/${deleteItemId}`, {
+      await axios.delete(`${API}/dosen/${deleteItemId}`, {
         headers: { Authorization: `Bearer ${getToken()}` },
       });
       setDosenList((prev) => prev.filter((d) => d.id !== deleteItemId));
@@ -72,7 +74,7 @@ const AdminDosen = () => {
     try {
       setLoading(true);
       await axios.put(
-        `https://d1raf3a33gcfqd.cloudfront.net/dosen/${editDosen.alias}`,
+        `${API}/dosen/${editDosen.alias}`,
         {
           ...editDosen,
           status_kehadiran: Boolean(editDosen.status_kehadiran),
@@ -98,7 +100,7 @@ const AdminDosen = () => {
     try {
       setLoading(true);
       await axios.post(
-        "https://d1raf3a33gcfqd.cloudfront.net/dosen",
+        `${API}/dosen`,
         newDosen,
         {
           headers: { Authorization: `Bearer ${getToken()}` },
@@ -146,7 +148,7 @@ const AdminDosen = () => {
         status_kehadiran: newStatus
       };
       
-      await axios.put(`https://d1raf3a33gcfqd.cloudfront.net/dosen/${dosen.alias}`, payload, {
+      await axios.put(`${API}/dosen/${dosen.alias}`, payload, {
         headers: { Authorization: `Bearer ${getToken()}` },
       });
       

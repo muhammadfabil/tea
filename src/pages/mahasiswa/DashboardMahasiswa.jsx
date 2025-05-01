@@ -46,6 +46,9 @@ const DashboardMahasiswa = () => {
   const [loading, setLoading] = useState(true);
   const [jenisLayanan, setJenisLayanan] = useState({});
 
+
+  const API = import.meta.env.VITE_API_BASE_URL;
+
   const getAuthData = () => {
     try {
       return JSON.parse(localStorage.getItem("auth"));
@@ -76,27 +79,27 @@ const DashboardMahasiswa = () => {
       // Fetch semua data secara paralel
       const [jadwalData, pelayananData, dosenData, antrianData, jenisLayananData] = await Promise.all([
         // Fetch Jadwal Bimbingan
-        fetch(`https://d1raf3a33gcfqd.cloudfront.net/relation/mahasiswa/${nim}`, {
+        fetch(`${API}/relation/mahasiswa/${nim}`, {
           headers: { Authorization: `Bearer ${token}` },
         }).then(res => res.json()),
         
         // Fetch Status Pelayanan
-        fetch(`https://d1raf3a33gcfqd.cloudfront.net/layanan/pengajuan/${nim}`, {
+        fetch(`${API}/layanan/pengajuan/${nim}`, {
           headers: { Authorization: `Bearer ${token}` },
         }).then(res => res.json()),
         
         // Fetch Relasi Dosen
-        fetch(`https://d1raf3a33gcfqd.cloudfront.net/dosen/all`, {
+        fetch(`${API}/dosen/all`, {
           headers: { Authorization: `Bearer ${token}` },
         }).then(res => res.json()),
         
         // Fetch Antrian Bimbingan
-        fetch(`https://d1raf3a33gcfqd.cloudfront.net/antrian/mahasiswa/${nim}`, {
+        fetch(`${API}/antrian/mahasiswa/${nim}`, {
           headers: { Authorization: `Bearer ${token}` },
         }).then(res => res.json()).catch(() => []),
         
         // Fetch Jenis Layanan
-        fetch(`https://d1raf3a33gcfqd.cloudfront.net/layanan/jenis`, { // Fixed URL
+        fetch(`${API}/layanan/jenis`, {
           headers: { Authorization: `Bearer ${token}` },
         }).then(res => res.json()).catch(() => [])
       ]);
@@ -159,7 +162,7 @@ const DashboardMahasiswa = () => {
 
       if (!subscription) {
         console.log('Fetching VAPID public key...');
-        const response = await fetch('https://d1raf3a33gcfqd.cloudfront.net/wp/vapid-public-key'); // Updated URL
+        const response = await fetch(`${API}/wp/vapid-public-key`);
         if (!response.ok) {
           throw new Error(`VAPID public key request failed: ${response.status}`);
         }
@@ -181,7 +184,7 @@ const DashboardMahasiswa = () => {
 
       // Kirim subscription ke server
       console.log('Sending subscription to server...');
-      const pushResponse = await fetch('https://d1raf3a33gcfqd.cloudfront.net/wp/push/subscribe', {
+      const pushResponse = await fetch(`${API}/wp/push/subscribe`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
