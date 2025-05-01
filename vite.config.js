@@ -8,9 +8,11 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
-      registerType: 'autoUpdate', // penting!
-      injectRegister: 'auto',     // auto daftar SW ke index.html
-
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.js',
+      injectRegister: 'auto',
+      registerType: 'autoUpdate',
       manifest: {
         name: 'Sistem Manajemen Layanan Administrasi dan Antrean Program Studi',
         short_name: 'SIMANTAP',
@@ -38,53 +40,6 @@ export default defineConfig({
           },
         ],
       },
-
-      workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,ico}'],
-        cleanupOutdatedCaches: true,
-        clientsClaim: true,
-
-        runtimeCaching: [
-          {
-            // HTML documents (utama)
-            urlPattern: ({ request }) => request.destination === 'document',
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'html-cache',
-              expiration: {
-                maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24, // 1 hari
-              },
-            },
-          },
-          {
-            // Static files (JS/CSS)
-            urlPattern: ({ request }) =>
-              request.destination === 'style' || request.destination === 'script',
-            handler: 'StaleWhileRevalidate',
-            options: {
-              cacheName: 'static-resources',
-              expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 60 * 60 * 24 * 30, // 30 hari
-              },
-            },
-          },
-          {
-            // Backend API (Railway FastAPI)
-            urlPattern: /^https:\/\/.*\.railway\.app\/.*$/,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'api-cache',
-              expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 3600, // 1 jam
-              },
-            },
-          },
-        ],
-      },
-
       devOptions: {
         enabled: true,
         type: 'module',
@@ -93,7 +48,4 @@ export default defineConfig({
       },
     }),
   ],
-
-  // Menambahkan konfigurasi proxy di sini
-  
 });

@@ -82,7 +82,7 @@ define(['./workbox-b49cbce6'], (function (workbox) { 'use strict';
     "revision": "d41d8cd98f00b204e9800998ecf8427e"
   }, {
     "url": "index.html",
-    "revision": "0.ar31mqjrqo"
+    "revision": "0.mudeapju76"
   }], {});
   workbox.cleanupOutdatedCaches();
   workbox.registerRoute(new workbox.NavigationRoute(workbox.createHandlerBoundToURL("index.html"), {
@@ -108,6 +108,13 @@ define(['./workbox-b49cbce6'], (function (workbox) { 'use strict';
   }), 'GET');
   workbox.registerRoute(/^https:\/\/.*\.railway\.app\/.*$/, new workbox.NetworkFirst({
     "cacheName": "api-cache",
+    plugins: [new workbox.ExpirationPlugin({
+      maxEntries: 50,
+      maxAgeSeconds: 3600
+    })]
+  }), 'GET');
+  workbox.registerRoute(/^https:\/\/d1raf3a33gcfqd\.cloudfront\.net\/.*$/, new workbox.NetworkFirst({
+    "cacheName": "api-cache-cloudfront",
     plugins: [new workbox.ExpirationPlugin({
       maxEntries: 50,
       maxAgeSeconds: 3600
