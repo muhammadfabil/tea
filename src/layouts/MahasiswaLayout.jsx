@@ -118,7 +118,7 @@ const MahasiswaLayout = () => {
                 <span>Isi Data Dosen</span>
               </div>
             </NavLink>
-            <NavLink
+            {/* <NavLink
               to="/mahasiswa/news"
               className={({ isActive }) =>
                 `${navItem} ${isActive ? activeNav : "text-gray-700"}`
@@ -128,7 +128,7 @@ const MahasiswaLayout = () => {
                 <FaRegNewspaper className="w-5 h-5 mr-3" />
                 <span>News IF</span>
               </div>
-            </NavLink>
+            </NavLink> */}
             <NavLink
               to="/mahasiswa/profile"
               className={({ isActive }) =>
