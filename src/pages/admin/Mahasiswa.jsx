@@ -37,7 +37,7 @@ const AdminMahasiswa = () => {
   const fetchMahasiswa = async () => {
     try {
       const token = getAuthToken();
-      const response = await axios.get("http://127.0.0.1:8000/mahasiswa/all", {
+      const response = await axios.get("http://13.236.194.123/mahasiswa/all", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -52,7 +52,7 @@ const AdminMahasiswa = () => {
     setIsLoading(true);
     try {
       const token = getAuthToken();
-      const response = await axios.get(`http://127.0.0.1:8000/mahasiswa/detail/${nim}`, {
+      const response = await axios.get(`http://13.236.194.123/mahasiswa/detail/${nim}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -86,7 +86,7 @@ const AdminMahasiswa = () => {
     setIsLoading(true);
     try {
       const token = getAuthToken();
-      const response = await axios.get(`http://127.0.0.1:8000/mahasiswa/detail/${mhs.nim}`, {
+      const response = await axios.get(`http://13.236.194.123/mahasiswa/detail/${mhs.nim}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -119,8 +119,8 @@ const AdminMahasiswa = () => {
     setIsDeleting(true);
     try {
       const token = getAuthToken();
-      console.log("Mengirim request delete ke:", `http://127.0.0.1:8000/mahasiswa/del/${deleteId}`);
-      const response = await axios.delete(`http://127.0.0.1:8000/mahasiswa/del/${deleteId}`, {
+      console.log("Mengirim request delete ke:", `http://13.236.194.123/mahasiswa/del/${deleteId}`); // Fixed URL
+      const response = await axios.delete(`http://13.236.194.123/mahasiswa/del/${deleteId}`, { // Updated URL
         headers: {
           Authorization: `Bearer ${token}`,
         },

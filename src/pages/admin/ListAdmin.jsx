@@ -22,7 +22,7 @@ const KelolaAdmin = () => {
 
   const fetchAdmin = async () => {
     try {
-      const res = await axios.get("http://127.0.0.1:8000/admin/all", { headers });
+      const res = await axios.get("http://13.236.194.123/admin/all", { headers }); // Updated URL
       setAdminList(res.data);
     } catch (err) {
       console.error(err);
@@ -43,8 +43,8 @@ const KelolaAdmin = () => {
     e.preventDefault();
     try {
       const url = editId
-        ? `http://127.0.0.1:8000/admin/${editId}`
-        : "http://127.0.0.1:8000/admin";
+        ? `http://13.236.194.123/admin/${editId}` // Updated URL
+        : "http://13.236.194.123/admin"; // Updated URL
       const method = editId ? axios.put : axios.post;
 
       await method(url, formData, { headers });
@@ -68,7 +68,7 @@ const KelolaAdmin = () => {
   const handleDelete = async (id) => {
     if (confirm("Yakin ingin menghapus admin ini?")) {
       try {
-        await axios.delete(`http://127.0.0.1:8000/admin/${id}`, { headers });
+        await axios.delete(`http://13.236.194.123/admin/${id}`, { headers }); // Updated URL
         toast.success("Admin dihapus.");
         fetchAdmin();
       } catch (err) {

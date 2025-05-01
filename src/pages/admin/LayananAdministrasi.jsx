@@ -40,7 +40,7 @@ const KelolaLayanan = () => {
   const fetchLayanan = async () => {
     try {
       setIsLoading(true);
-      const res = await axios.get("http://127.0.0.1:8000/layanan/jenis");
+      const res = await axios.get("http://13.236.194.123/layanan/jenis"); // Updated URL
       setLayanan(res.data);
     } catch (err) {
       console.error(err);
@@ -107,7 +107,7 @@ const handleToggleStatus = async (id, currentStatus, item) => {
       url_file: item.url_file
     };
     
-    await axios.put(`http://127.0.0.1:8000/layanan/jenis/${id}`, payload);
+    await axios.put(`http://13.236.194.123/layanan/jenis/${id}`, payload); // Updated URL
     
     // Update local state to reflect the change immediately
     setLayanan(prevLayanan => 
@@ -167,10 +167,10 @@ const handleToggleStatus = async (id, currentStatus, item) => {
       };
 
       if (editId) {
-        await axios.put(`http://127.0.0.1:8000/layanan/jenis/${editId}`, payload);
+        await axios.put(`http://http://13.236.194.123//layanan/jenis/${editId}`, payload);
         toast.success("Layanan berhasil diperbarui");
       } else {
-        await axios.post("http://127.0.0.1:8000/layanan/jenis", payload, {
+        await axios.post("http://13.236.194.123/layanan/jenis", payload, { // Updated URL
           headers: {
             Authorization: `Bearer ${getToken()}`,
           },
@@ -209,7 +209,7 @@ const handleToggleStatus = async (id, currentStatus, item) => {
   const handleDelete = async () => {
     try {
       setIsLoading(true);
-      await axios.delete(`http://127.0.0.1:8000/layanan/jenis/${deleteItemId}`);
+      await axios.delete(`http://13.236.194.123/layanan/jenis/${deleteItemId}`); // Fixed URL
       toast.success("Layanan berhasil dihapus");
       fetchLayanan();
       setIsDeleteModalOpen(false);

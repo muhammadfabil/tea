@@ -58,7 +58,7 @@ const NewsAdmin = () => {
   const fetchNews = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:8000/news');
+      const response = await axios.get('http://13.236.194.123/news');
       setNewsList(response.data);
     } catch (error) {
       console.error('Error fetching news:', error);
@@ -128,7 +128,7 @@ const NewsAdmin = () => {
       }
 
       // Send the request
-      const response = await axios.post("http://localhost:8000/news", formPayload, {
+      const response = await axios.post("http://13.236.194.123/news", formPayload, { // Updated URL
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -189,7 +189,7 @@ const NewsAdmin = () => {
 
       // Send the update request
       const response = await axios.put(
-        `http://localhost:8000/news/${selectedNews.news_id}`,
+        `http://13.236.194.123/news/${selectedNews.news_id}`, // Updated URL
         formPayload,
         {
           headers: {
@@ -234,7 +234,7 @@ const NewsAdmin = () => {
   const deleteNews = async (newsId) => {
     try {
       setLoading(true);
-      await axios.delete(`http://localhost:8000/news/${newsId}`);
+      await axios.delete(`http://13.236.194.123/news/${newsId}`); // Updated URL
       
       setNewsList(prevList => prevList.filter(item => item.news_id !== newsId));
       setConfirmDelete(null);
@@ -407,7 +407,7 @@ const NewsAdmin = () => {
         status: newStatus
       };
       
-      const response = await axios.put(`http://localhost:8000/news/${news.news_id}`, payload, {
+      const response = await axios.put(`http://13.236.194.123/news/${news.news_id}`, payload, {
         headers: {
           'Content-Type': 'application/json',
         },

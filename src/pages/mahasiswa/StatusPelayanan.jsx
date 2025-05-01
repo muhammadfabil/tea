@@ -109,7 +109,7 @@ const StatusPelayanan = () => {
     }
 
     // Create WebSocket connection
-    const ws = new WebSocket(`ws://localhost:8000/ws?token=${token}`);
+    const ws = new WebSocket(`ws://13.236.194.123/ws?token=${token}`);
     socketRef.current = ws;
     
     // Connection opened
@@ -212,7 +212,7 @@ const StatusPelayanan = () => {
   const fetchMahasiswaName = async (nim) => {
     const { token } = getAuthData();
     try {
-      const response = await axios.get(`http://127.0.0.1:8000/mahasiswa/${nim}`, {
+      const response = await axios.get(`http://13.236.194.123/mahasiswa/${nim}`, { // Updated URL
         headers: { Authorization: `Bearer ${token}` },
       });
       return response.data.nama;
@@ -234,7 +234,7 @@ const StatusPelayanan = () => {
       }
 
       // Fetch jenis layanan untuk mendapatkan nama layanan berdasarkan ID
-      const jenisLayananResponse = await axios.get(`http://127.0.0.1:8000/layanan/jenis`, {
+      const jenisLayananResponse = await axios.get(`http://13.236.194.123/layanan/jenis`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       
@@ -248,7 +248,7 @@ const StatusPelayanan = () => {
       setJenisLayanan(jenisLayananObject);
 
       // Fetch pengajuan data
-      const response = await axios.get(`http://127.0.0.1:8000/layanan/pengajuan/${nim}`, {
+      const response = await axios.get(`http://13.236.194.123/layanan/pengajuan/${nim}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       

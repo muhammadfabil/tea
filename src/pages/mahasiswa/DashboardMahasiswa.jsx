@@ -76,27 +76,27 @@ const DashboardMahasiswa = () => {
       // Fetch semua data secara paralel
       const [jadwalData, pelayananData, dosenData, antrianData, jenisLayananData] = await Promise.all([
         // Fetch Jadwal Bimbingan
-        fetch(`http://127.0.0.1:8000/relation/mahasiswa/${nim}`, {
+        fetch(`http://13.236.194.123/relation/mahasiswa/${nim}`, {
           headers: { Authorization: `Bearer ${token}` },
         }).then(res => res.json()),
         
         // Fetch Status Pelayanan
-        fetch(`http://127.0.0.1:8000/layanan/pengajuan/${nim}`, {
+        fetch(`http://13.236.194.123/layanan/pengajuan/${nim}`, {
           headers: { Authorization: `Bearer ${token}` },
         }).then(res => res.json()),
         
         // Fetch Relasi Dosen
-        fetch(`http://127.0.0.1:8000/dosen/all`, {
+        fetch(`http://13.236.194.123/dosen/all`, {
           headers: { Authorization: `Bearer ${token}` },
         }).then(res => res.json()),
         
         // Fetch Antrian Bimbingan
-        fetch(`http://127.0.0.1:8000/antrian/mahasiswa/${nim}`, {
+        fetch(`http://13.236.194.123/antrian/mahasiswa/${nim}`, {
           headers: { Authorization: `Bearer ${token}` },
         }).then(res => res.json()).catch(() => []),
         
         // Fetch Jenis Layanan
-        fetch(`http://127.0.0.1:8000/layanan/jenis`, {
+        fetch(`http://13.236.194.123/layanan/jenis`, {
           headers: { Authorization: `Bearer ${token}` },
         }).then(res => res.json()).catch(() => [])
       ]);
@@ -159,7 +159,7 @@ const DashboardMahasiswa = () => {
 
       if (!subscription) {
         console.log('Fetching VAPID public key...');
-        const response = await fetch('http://127.0.0.1:8000/wp/vapid-public-key');
+        const response = await fetch('http://13.236.194.123/wp/vapid-public-key'); // Updated URL
         if (!response.ok) {
           throw new Error(`VAPID public key request failed: ${response.status}`);
         }
@@ -181,7 +181,7 @@ const DashboardMahasiswa = () => {
 
       // Kirim subscription ke server
       console.log('Sending subscription to server...');
-      const pushResponse = await fetch('http://127.0.0.1:8000/wp/push/subscribe', {
+      const pushResponse = await fetch('http://13.236.194.123/wp/push/subscribe', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

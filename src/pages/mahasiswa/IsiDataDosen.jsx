@@ -72,7 +72,7 @@ const IsiDataDosen = () => {
   const fetchDosen = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("http://127.0.0.1:8000/dosen/all");
+      const res = await axios.get("http://13.236.194.123/dosen/all"); // Updated URL
       setDaftarDosen(res.data);
     } catch (err) {
       toast.error("Gagal memuat data dosen");
@@ -84,7 +84,7 @@ const IsiDataDosen = () => {
   const fetchRelations = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`http://127.0.0.1:8000/relation/mahasiswa/${nim}`);
+      const res = await axios.get(`http://13.236.194.123/relation/mahasiswa/${nim}`); // Updated URL
       setRelations(res.data);
     } catch (err) {
       toast.error("Gagal memuat relasi dosen");
@@ -127,12 +127,12 @@ const IsiDataDosen = () => {
       setLoading(true);
       if (isEditing) {
         await axios.put(
-          `http://127.0.0.1:8000/relation/${isEditing}`,
+          `http://13.236.194.123/relation/${isEditing}`, // Updated URL
           payload
         );
         toast.success("Data dosen berhasil diperbarui");
       } else {
-        await axios.post("http://127.0.0.1:8000/relation/", payload);
+        await axios.post("http://13.236.194.123/relation/", payload);
         toast.success("Data dosen berhasil ditambahkan");
       }
       setFormData({ dosen_alias: "", role: "" });
@@ -150,7 +150,7 @@ const IsiDataDosen = () => {
   const handleDelete = async (id) => {
     try {
       setLoading(true);
-      await axios.delete(`http://127.0.0.1:8000/relation/${id}`);
+      await axios.delete(`http://13.236.194.123/relation/${id}`);
       toast.success("Relasi berhasil dihapus");
       setConfirmDelete(null);
       fetchRelations();

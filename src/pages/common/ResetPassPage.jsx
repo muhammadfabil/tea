@@ -55,7 +55,7 @@ const ResetPassPage = () => {
 
     try {
       // Using query parameters instead of JSON body
-      const url = `http://127.0.0.1:8000/auth/reset-password?token=${encodeURIComponent(token)}&new_password=${encodeURIComponent(password)}`;
+      const url = `http://13.236.194.123/auth/reset-password?token=${encodeURIComponent(token)}&new_password=${encodeURIComponent(password)}`;
       
       const response = await axios.post(
         url,

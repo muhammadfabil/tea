@@ -58,7 +58,7 @@ const Login = () => {
 
     try {
       // Step 1: Login untuk mendapatkan token
-      const loginResponse = await axios.post("http://127.0.0.1:8000/auth/login", {
+      const loginResponse = await axios.post("http://13.236.194.123/auth/login", {
         email: email,
         password: password,
       });
@@ -66,7 +66,7 @@ const Login = () => {
       const { access_token, refresh_token } = loginResponse.data;
 
       // Step 2: Ambil data profil pengguna
-      const profileResponse = await axios.get("http://127.0.0.1:8000/auth/me", {
+      const profileResponse = await axios.get("http://13.236.194.123/auth/me", {
         headers: {
           Authorization: `Bearer ${access_token}`,
         },

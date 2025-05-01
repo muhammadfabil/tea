@@ -32,7 +32,7 @@ const DaftarMahasiswa = () => {
         const alias = auth?.user?.profile?.alias;
         if (!alias) return;
 
-        const res = await axios.get(`http://127.0.0.1:8000/relation/dosen/${alias}`);
+        const res = await axios.get(`http://13.236.194.123/relation/dosen/${alias}`);
         setData(res.data["Daftar Mahasiswa"] || []);
       } catch (err) {
         console.error("Gagal mengambil data:", err);
@@ -47,7 +47,7 @@ const DaftarMahasiswa = () => {
   const fetchStudentDetail = async (nim) => {
     setIsLoadingDetail(true);
     try {
-      const res = await axios.get(`http://127.0.0.1:8000/mahasiswa/detail/${nim}`);
+      const res = await axios.get(`http://13.236.194.123/mahasiswa/detail/${nim}`);
       setStudentDetail(res.data);
     } catch (err) {
       console.error("Gagal mengambil detail mahasiswa:", err);
@@ -63,7 +63,7 @@ const DaftarMahasiswa = () => {
       const alias = auth?.user?.profile?.alias;
       if (!alias) return;
 
-      const res = await axios.get(`http://127.0.0.1:8000/waktu_bimbingan/dosen/${alias}`);
+      const res = await axios.get(`http://13.236.194.123/waktu_bimbingan/dosen/${alias}`);
       setBimbinganData(res.data || []);
     } catch (err) {
       console.error("Gagal mengambil data bimbingan:", err);
