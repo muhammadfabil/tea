@@ -56,7 +56,7 @@ const ProfileMahasiswa = () => {
 
       try {
         setLoading(true);
-        const response = await axios.get(`http://13.236.194.123/mahasiswa/${nim}`); // Updated URL
+        const response = await axios.get(`https://13.236.194.123/mahasiswa/${nim}`); // Updated URL
         setProfile(response.data);
         setFormData({
           nama: response.data.nama || '',
@@ -124,7 +124,7 @@ const ProfileMahasiswa = () => {
 
       // Send request to backend
       const response = await axios.put(
-        `http://13.236.194.123/mahasiswa/${nim}`,
+        `https://13.236.194.123/mahasiswa/${nim}`,
         updateData,
         {
           headers: {

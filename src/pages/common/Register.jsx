@@ -50,7 +50,7 @@ const RegisterMahasiswa = () => {
     }
 
     try {
-      const res = await axios.post("http://13.236.194.123/mahasiswa", {
+      const res = await axios.post("https://13.236.194.123/mahasiswa", {
         nim,
         nama,
         email,

@@ -93,7 +93,7 @@ const JadwalBimbinganMahasiswa = () => {
     }
 
     // Create WebSocket connection with current token from AuthContext
-    socketRef.current = new WebSocket(`ws://13.236.194.123/ws?token=${token}`);
+    socketRef.current = new WebSocket(`wss://13.236.194.123/ws?token=${token}`);
 
     // Connection opened
     socketRef.current.addEventListener("open", () => {
@@ -214,7 +214,7 @@ const JadwalBimbinganMahasiswa = () => {
         setNimMahasiswa(nim);
 
         // Fetch relation data for the logged in student
-        const relationResponse = await fetch(`http://13.236.194.123/relation/mahasiswa/${nim}`);
+        const relationResponse = await fetch(`https://13.236.194.123/relation/mahasiswa/${nim}`);
         
         if (!relationResponse.ok) {
           throw new Error(`Error fetching relations: ${relationResponse.statusText}`);
@@ -232,7 +232,7 @@ const JadwalBimbinganMahasiswa = () => {
         const dosenSchedules = await Promise.all(
           relationData.map(async (relation) => {
             try {
-              const scheduleResponse = await fetch(`http://13.236.194.123/waktu_bimbingan/dosen/${relation.dosen_alias}`); // Updated URL
+              const scheduleResponse = await fetch(`https://13.236.194.123/waktu_bimbingan/dosen/${relation.dosen_alias}`); // Updated URL
               const scheduleData = await scheduleResponse.json();
               
               return {
@@ -366,7 +366,7 @@ const JadwalBimbinganMahasiswa = () => {
         return;
       }
 
-      const endpoint = `http://13.236.194.123/antrian/f/${antrianId}`; // Updated URL
+      const endpoint = `https://13.236.194.123/antrian/f/${antrianId}`; // Updated URL
       const response = await fetch(endpoint, {
         method: "PUT",
         headers: {
@@ -446,7 +446,7 @@ const JadwalBimbinganMahasiswa = () => {
         mahasiswa_nim: nimMahasiswa
       });
       
-      const response = await fetch(`http://13.236.194.123/antrian/?${queryParams.toString()}`, {
+      const response = await fetch(`https://13.236.194.123/antrian/?${queryParams.toString()}`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${currentToken}`

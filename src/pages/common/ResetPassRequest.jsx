@@ -14,7 +14,7 @@ const ResetPassRequest = () => {
 
     try {
       const response = await axios.post(
-        `http://13.236.194.123/auth/forgot-password?email=${encodeURIComponent(email)}`,
+        `https://13.236.194.123/auth/forgot-password?email=${encodeURIComponent(email)}`,
         '',
         {
           headers: {

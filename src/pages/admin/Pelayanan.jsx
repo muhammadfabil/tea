@@ -30,7 +30,7 @@ const AdminPelayanan = () => {
 
   const fetchMahasiswaName = async (nim) => {
     try {
-      const response = await axios.get(`http://13.236.194.123/mahasiswa/${nim}`, {
+      const response = await axios.get(`https://13.236.194.123/mahasiswa/${nim}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       return response.data.nama;
@@ -44,10 +44,10 @@ const AdminPelayanan = () => {
     setIsLoading(true);
     try {
       const [pengajuanRes, jenisRes] = await Promise.all([
-        axios.get("http://13.236.194.123/layanan/pengajuan/all", {
+        axios.get("https://13.236.194.123/layanan/pengajuan/all", {
           headers: { Authorization: `Bearer ${token}` },
         }),
-        axios.get("http://13.236.194.123/layanan/jenis", {
+        axios.get("https://13.236.194.123/layanan/jenis", {
           headers: { Authorization: `Bearer ${token}` },
         }),
       ]);
@@ -87,7 +87,7 @@ const AdminPelayanan = () => {
     if (!token) return;
 
     // Initialize WebSocket connection
-    socketRef.current = new WebSocket(`ws://13.236.194.123/ws?token=${token}`);
+    socketRef.current = new WebSocket(`wss://13.236.194.123/ws?token=${token}`);
 
     socketRef.current.onopen = () => {
       console.log("✅ WebSocket connected");
@@ -156,7 +156,7 @@ const AdminPelayanan = () => {
     try {
       const { id, status, catatan_admin, jadwal_pengambilan } = selectedItem;
 
-      await axios.put(`http://13.236.194.123/layanan/pengajuan/${id}`, {
+      await axios.put(`https://13.236.194.123/layanan/pengajuan/${id}`, {
         status,
         catatan_admin,
         jadwal_pengambilan,

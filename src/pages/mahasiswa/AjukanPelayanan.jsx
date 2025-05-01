@@ -114,7 +114,7 @@ const AjukanPelayanan = () => {
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
-    fetch("http://13.236.194.123/layanan/jenis")
+    fetch("https://13.236.194.123/layanan/jenis")
       .then((res) => res.json())
       .then((data) => {
         const activeLayanan = data.filter((item) => item.is_aktif);
@@ -162,7 +162,7 @@ const AjukanPelayanan = () => {
     try {
       const token = JSON.parse(localStorage.getItem("auth"))?.token;
   
-      const res = await fetch("http://13.236.194.123/layanan/pengajuan/ajukan", {
+      const res = await fetch("https://13.236.194.123/layanan/pengajuan/ajukan", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,

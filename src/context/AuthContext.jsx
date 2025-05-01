@@ -69,7 +69,7 @@ export const AuthProvider = ({ children }) => {
       if (!stored?.refresh_token) throw new Error("Refresh token tidak ditemukan");
 
       const response = await axios.post(
-        `http://13.236.194.123/auth/refresh?token=${stored.refresh_token}`
+        `https://13.236.194.123/auth/refresh?token=${stored.refresh_token}`
       );
 
       const { access_token, refresh_token } = response.data;
@@ -104,7 +104,7 @@ export const AuthProvider = ({ children }) => {
   const refreshProfile = async () => {
     try {
       if (!token) return;
-      const res = await axios.get("http://13.236.194.123/auth/me", {
+      const res = await axios.get("https://13.236.194.123/auth/me", {
         headers: { Authorization: `Bearer ${token}` },
       });
       setUser(res.data);
