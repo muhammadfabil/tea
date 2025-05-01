@@ -24,7 +24,7 @@ const News = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await axios.get('https://http://13.236.194.123/news');
+      const response = await axios.get('https://d1raf3a33gcfqd.cloudfront.net/news');
       setNews(response.data);
     } catch (err) {
       console.error('Error fetching news:', err);

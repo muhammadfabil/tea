@@ -28,22 +28,22 @@ const AdminDashboard = () => {
 
       try {
         // Fetch mahasiswa stats
-        const mahasiswaRes = await axios.get("https://http://13.236.194.123/mahasiswa/all", {
+        const mahasiswaRes = await axios.get("https://d1raf3a33gcfqd.cloudfront.net/mahasiswa/all", {
           headers: { Authorization: `Bearer ${token}` }
         });
         
         // Fetch dosen stats
-        const dosenRes = await axios.get("https://http://13.236.194.123/dosen/all", {
+        const dosenRes = await axios.get("https://d1raf3a33gcfqd.cloudfront.net/dosen/all", {
           headers: { Authorization: `Bearer ${token}` }
         });
         
         // Fetch layanan stats
-        const layananRes = await axios.get("https://http://13.236.194.123/layanan/jenis", {
+        const layananRes = await axios.get("https://d1raf3a33gcfqd.cloudfront.net/layanan/jenis", {
           headers: { Authorization: `Bearer ${token}` }
         });
         
         // Fetch pengajuan stats
-        const pengajuanRes = await axios.get("https://http://13.236.194.123/layanan/pengajuan/all", {
+        const pengajuanRes = await axios.get("https://d1raf3a33gcfqd.cloudfront.net/layanan/pengajuan/all", {
           headers: { Authorization: `Bearer ${token}` }
         });
         
@@ -103,7 +103,7 @@ const AdminDashboard = () => {
   const getStudentName = async (nim) => {
     try {
       const token = getToken();
-      const response = await axios.get(`https://http://13.236.194.123/mahasiswa/${nim}`, {
+      const response = await axios.get(`https://d1raf3a33gcfqd.cloudfront.net/mahasiswa/${nim}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       return response.data.nama;

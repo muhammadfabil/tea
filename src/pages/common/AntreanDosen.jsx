@@ -20,7 +20,7 @@ const AntreanDosen = () => {
     // Fetch initial data
     const fetchDosen = async () => {
       try {
-        const response = await axios.get("https://13.236.194.123/dosen/all");
+        const response = await axios.get("https://d1raf3a33gcfqd.cloudfront.net/dosen/all");
         const data = response.data;
         setDosenList(data);
       } catch (error) {
@@ -32,7 +32,7 @@ const AntreanDosen = () => {
 
     // Setup WebSocket connection
     const connectWebSocket = () => {
-      wsRef.current = new WebSocket("wss://13.236.194.123/ws/public");
+      wsRef.current = new WebSocket("wss://d1raf3a33gcfqd.cloudfront.net/ws/public");
 
       wsRef.current.onopen = () => {
         console.log("WebSocket connected");

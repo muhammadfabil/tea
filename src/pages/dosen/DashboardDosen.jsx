@@ -41,13 +41,13 @@ const DashboardDosen = () => {
       
       // Fetch jadwal bimbingan
       const jadwalResponse = await axios.get(
-        `https://13.236.194.123/waktu_bimbingan/dosen/${alias}`, 
+        `https://d1raf3a33gcfqd.cloudfront.net/waktu_bimbingan/dosen/${alias}`, 
         { headers: { Authorization: `Bearer ${token}` }}
       );
       
       // Fetch mahasiswa
       const mahasiswaResponse = await axios.get(
-        `https://13.236.194.123/relation/dosen/${alias}`, 
+        `https://d1raf3a33gcfqd.cloudfront.net/relation/dosen/${alias}`, 
         { headers: { Authorization: `Bearer ${token}` }}
       );
       

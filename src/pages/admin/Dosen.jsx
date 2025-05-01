@@ -32,7 +32,7 @@ const AdminDosen = () => {
   const fetchDosen = async () => {
     setLoading(true);
     try {
-      const response = await axios.get("https://13.236.194.123/dosen/all", {
+      const response = await axios.get("https://d1raf3a33gcfqd.cloudfront.net/dosen/all", {
         headers: { Authorization: `Bearer ${getToken()}` },
       });
       setDosenList(response.data);
@@ -53,7 +53,7 @@ const AdminDosen = () => {
   const handleDelete = async () => {
     try {
       setLoading(true);
-      await axios.delete(`https://13.236.194.123/dosen/${deleteItemId}`, {
+      await axios.delete(`https://d1raf3a33gcfqd.cloudfront.net/dosen/${deleteItemId}`, {
         headers: { Authorization: `Bearer ${getToken()}` },
       });
       setDosenList((prev) => prev.filter((d) => d.id !== deleteItemId));
@@ -72,7 +72,7 @@ const AdminDosen = () => {
     try {
       setLoading(true);
       await axios.put(
-        `https://13.236.194.123/dosen/${editDosen.alias}`,
+        `https://d1raf3a33gcfqd.cloudfront.net/dosen/${editDosen.alias}`,
         {
           ...editDosen,
           status_kehadiran: Boolean(editDosen.status_kehadiran),
@@ -98,7 +98,7 @@ const AdminDosen = () => {
     try {
       setLoading(true);
       await axios.post(
-        "https://13.236.194.123/dosen",
+        "https://d1raf3a33gcfqd.cloudfront.net/dosen",
         newDosen,
         {
           headers: { Authorization: `Bearer ${getToken()}` },
@@ -146,7 +146,7 @@ const AdminDosen = () => {
         status_kehadiran: newStatus
       };
       
-      await axios.put(`https://13.236.194.123/dosen/${dosen.alias}`, payload, {
+      await axios.put(`https://d1raf3a33gcfqd.cloudfront.net/dosen/${dosen.alias}`, payload, {
         headers: { Authorization: `Bearer ${getToken()}` },
       });
       

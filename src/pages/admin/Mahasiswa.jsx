@@ -37,7 +37,7 @@ const AdminMahasiswa = () => {
   const fetchMahasiswa = async () => {
     try {
       const token = getAuthToken();
-      const response = await axios.get("https://13.236.194.123/mahasiswa/all", {
+      const response = await axios.get("https://d1raf3a33gcfqd.cloudfront.net/mahasiswa/all", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -52,7 +52,7 @@ const AdminMahasiswa = () => {
     setIsLoading(true);
     try {
       const token = getAuthToken();
-      const response = await axios.get(`https://13.236.194.123/mahasiswa/detail/${nim}`, {
+      const response = await axios.get(`https://d1raf3a33gcfqd.cloudfront.net/mahasiswa/detail/${nim}`, { // Updated URL
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -86,7 +86,7 @@ const AdminMahasiswa = () => {
     setIsLoading(true);
     try {
       const token = getAuthToken();
-      const response = await axios.get(`https://13.236.194.123/mahasiswa/detail/${mhs.nim}`, {
+      const response = await axios.get(`https://d1raf3a33gcfqd.cloudfront.net/mahasiswa/detail/${mhs.nim}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -119,8 +119,8 @@ const AdminMahasiswa = () => {
     setIsDeleting(true);
     try {
       const token = getAuthToken();
-      console.log("Mengirim request delete ke:", `https://13.236.194.123/mahasiswa/del/${deleteId}`); // Fixed URL
-      const response = await axios.delete(`https://13.236.194.123/mahasiswa/del/${deleteId}`, { // Updated URL
+      console.log("Mengirim request delete ke:", `https://d1raf3a33gcfqd.cloudfront.net/mahasiswa/del/${deleteId}`); // Fixed URL
+      const response = await axios.delete(`https://d1raf3a33gcfqd.cloudfront.net/mahasiswa/del/${deleteId}`, { // Updated URL
         headers: {
           Authorization: `Bearer ${token}`,
         },

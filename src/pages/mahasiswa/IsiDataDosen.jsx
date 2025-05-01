@@ -72,7 +72,7 @@ const IsiDataDosen = () => {
   const fetchDosen = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("https://13.236.194.123/dosen/all"); // Updated URL
+      const res = await axios.get("https://d1raf3a33gcfqd.cloudfront.net/dosen/all"); // Updated URL
       setDaftarDosen(res.data);
     } catch (err) {
       toast.error("Gagal memuat data dosen");
@@ -84,7 +84,7 @@ const IsiDataDosen = () => {
   const fetchRelations = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`https://13.236.194.123/relation/mahasiswa/${nim}`); // Updated URL
+      const res = await axios.get(`https://d1raf3a33gcfqd.cloudfront.net/relation/mahasiswa/${nim}`); // Updated URL
       setRelations(res.data);
     } catch (err) {
       toast.error("Gagal memuat relasi dosen");
@@ -127,12 +127,12 @@ const IsiDataDosen = () => {
       setLoading(true);
       if (isEditing) {
         await axios.put(
-          `https://13.236.194.123/relation/${isEditing}`, // Updated URL
+          `https://d1raf3a33gcfqd.cloudfront.net/relation/${isEditing}`, // Updated URL
           payload
         );
         toast.success("Data dosen berhasil diperbarui");
       } else {
-        await axios.post("https://13.236.194.123/relation/", payload);
+        await axios.post("https://d1raf3a33gcfqd.cloudfront.net/relation/", payload);
         toast.success("Data dosen berhasil ditambahkan");
       }
       setFormData({ dosen_alias: "", role: "" });
@@ -150,7 +150,7 @@ const IsiDataDosen = () => {
   const handleDelete = async (id) => {
     try {
       setLoading(true);
-      await axios.delete(`https://13.236.194.123/relation/${id}`);
+      await axios.delete(`https://d1raf3a33gcfqd.cloudfront.net/relation/${id}`);
       toast.success("Relasi berhasil dihapus");
       setConfirmDelete(null);
       fetchRelations();

@@ -56,7 +56,7 @@ const ProfileMahasiswa = () => {
 
       try {
         setLoading(true);
-        const response = await axios.get(`https://13.236.194.123/mahasiswa/${nim}`); // Updated URL
+        const response = await axios.get(`https://d1raf3a33gcfqd.cloudfront.net/mahasiswa/${nim}`); // Updated URL
         setProfile(response.data);
         setFormData({
           nama: response.data.nama || '',
@@ -124,7 +124,7 @@ const ProfileMahasiswa = () => {
 
       // Send request to backend
       const response = await axios.put(
-        `https://13.236.194.123/mahasiswa/${nim}`,
+        `https://d1raf3a33gcfqd.cloudfront.net/mahasiswa/${nim}`,
         updateData,
         {
           headers: {

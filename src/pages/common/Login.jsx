@@ -58,7 +58,7 @@ const Login = () => {
 
     try {
       // Step 1: Login untuk mendapatkan token
-      const loginResponse = await axios.post("https://13.236.194.123/auth/login", {
+      const loginResponse = await axios.post("https://d1raf3a33gcfqd.cloudfront.net/auth/login", {
         email: email,
         password: password,
       });
@@ -66,7 +66,7 @@ const Login = () => {
       const { access_token, refresh_token } = loginResponse.data;
 
       // Step 2: Ambil data profil pengguna
-      const profileResponse = await axios.get("https://13.236.194.123/auth/me", {
+      const profileResponse = await axios.get("https://d1raf3a33gcfqd.cloudfront.net/auth/me", {
         headers: {
           Authorization: `Bearer ${access_token}`,
         },

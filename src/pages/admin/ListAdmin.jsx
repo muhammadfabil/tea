@@ -22,7 +22,7 @@ const KelolaAdmin = () => {
 
   const fetchAdmin = async () => {
     try {
-      const res = await axios.get("https://13.236.194.123/admin/all", { headers }); // Updated URL
+      const res = await axios.get("https://d1raf3a33gcfqd.cloudfront.net/admin/all", { headers }); // Updated URL
       setAdminList(res.data);
     } catch (err) {
       console.error(err);
@@ -43,8 +43,8 @@ const KelolaAdmin = () => {
     e.preventDefault();
     try {
       const url = editId
-        ? `https://13.236.194.123/admin/${editId}` // Updated URL
-        : "https://13.236.194.123/admin"; // Updated URL
+        ? `https://d1raf3a33gcfqd.cloudfront.net/admin/${editId}` // Updated URL
+        : "https://d1raf3a33gcfqd.cloudfront.net/admin"; // Updated URL
       const method = editId ? axios.put : axios.post;
 
       await method(url, formData, { headers });
@@ -68,7 +68,7 @@ const KelolaAdmin = () => {
   const handleDelete = async (id) => {
     if (confirm("Yakin ingin menghapus admin ini?")) {
       try {
-        await axios.delete(`https://13.236.194.123/admin/${id}`, { headers }); // Updated URL
+        await axios.delete(`https://d1raf3a33gcfqd.cloudfront.net/admin/${id}`, { headers }); // Updated URL
         toast.success("Admin dihapus.");
         fetchAdmin();
       } catch (err) {

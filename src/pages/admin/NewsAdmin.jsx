@@ -58,7 +58,7 @@ const NewsAdmin = () => {
   const fetchNews = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('https://13.236.194.123/news');
+      const response = await axios.get('https://d1raf3a33gcfqd.cloudfront.net/news'); // Updated URL
       setNewsList(response.data);
     } catch (error) {
       console.error('Error fetching news:', error);
@@ -128,7 +128,7 @@ const NewsAdmin = () => {
       }
 
       // Send the request
-      const response = await axios.post("https://13.236.194.123/news", formPayload, { // Updated URL
+      const response = await axios.post("https://d1raf3a33gcfqd.cloudfront.net/news", formPayload, { // Updated URL
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -189,7 +189,7 @@ const NewsAdmin = () => {
 
       // Send the update request
       const response = await axios.put(
-        `https://13.236.194.123/news/${selectedNews.news_id}`, // Updated URL
+        `https://d1raf3a33gcfqd.cloudfront.net/news/${selectedNews.news_id}`, // Updated URL
         formPayload,
         {
           headers: {
@@ -234,7 +234,7 @@ const NewsAdmin = () => {
   const deleteNews = async (newsId) => {
     try {
       setLoading(true);
-      await axios.delete(`https://13.236.194.123/news/${newsId}`); // Updated URL
+      await axios.delete(`https://d1raf3a33gcfqd.cloudfront.net/news/${newsId}`); // Updated URL
       
       setNewsList(prevList => prevList.filter(item => item.news_id !== newsId));
       setConfirmDelete(null);
@@ -407,7 +407,7 @@ const NewsAdmin = () => {
         status: newStatus
       };
       
-      const response = await axios.put(`https://13.236.194.123/news/${news.news_id}`, payload, {
+      const response = await axios.put(`https://d1raf3a33gcfqd.cloudfront.net/news/${news.news_id}`, payload, {
         headers: {
           'Content-Type': 'application/json',
         },

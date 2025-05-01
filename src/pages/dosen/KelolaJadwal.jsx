@@ -165,7 +165,7 @@ const KelolaWaktuBimbingan = () => {
     if (!token) return;
     
     // Create WebSocket connection with correct endpoint
-    socketRef.current = new WebSocket(`wss://13.236.194.123/ws?token=${token}`);
+    socketRef.current = new WebSocket(`wss://d1raf3a33gcfqd.cloudfront.net/ws?token=${token}`);
     
     // Connection opened
     socketRef.current.addEventListener('open', (event) => {
@@ -247,7 +247,7 @@ const KelolaWaktuBimbingan = () => {
 
   const fetchJadwalBimbingan = async (alias) => {
     try {
-      const response = await fetch(`https://13.236.194.123/waktu_bimbingan/dosen/${alias}`, {
+      const response = await fetch(`https://d1raf3a33gcfqd.cloudfront.net/waktu_bimbingan/dosen/${alias}`, {
         headers: {
           Authorization: `Bearer ${userData?.token}`,
         },
@@ -298,7 +298,7 @@ const KelolaWaktuBimbingan = () => {
     };
 
     try {
-      const response = await fetch("https://13.236.194.123/waktu_bimbingan/", {
+      const response = await fetch("https://d1raf3a33gcfqd.cloudfront.net/waktu_bimbingan/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -335,7 +335,7 @@ const KelolaWaktuBimbingan = () => {
     setLoading(true);
 
     try {
-      const response = await fetch(`https://13.236.194.123/waktu_bimbingan/${selectedJadwal.bimbingan_id}`, {
+      const response = await fetch(`https://d1raf3a33gcfqd.cloudfront.net/waktu_bimbingan/${selectedJadwal.bimbingan_id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -372,7 +372,7 @@ const KelolaWaktuBimbingan = () => {
 
     setLoading(true);
     try {
-      const response = await fetch(`https://13.236.194.123/waktu_bimbingan/${selectedJadwal.bimbingan_id}`, {
+      const response = await fetch(`https://d1raf3a33gcfqd.cloudfront.net/waktu_bimbingan/${selectedJadwal.bimbingan_id}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${userData.token}`,
@@ -406,7 +406,7 @@ const KelolaWaktuBimbingan = () => {
     
     try {
       // Tetap gunakan endpoint yang sama
-      const endpoint = `https://13.236.194.123/antrian/f/${antrianId}`;
+      const endpoint = `https://d1raf3a33gcfqd.cloudfront.net/antrian/f/${antrianId}`;
       
       const response = await fetch(endpoint, {
         method: "PUT",
