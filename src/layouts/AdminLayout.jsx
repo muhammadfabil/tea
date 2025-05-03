@@ -132,7 +132,7 @@ const AdminLayout = () => {
                 <span>Manajemen Daftar Admin</span>
               </div>
             </NavLink>
-            {/* <NavLink
+            <NavLink
               to="/admin/news"
               className={({ isActive }) =>
                 `${navItem} ${isActive ? activeNav : "text-gray-700"}`
@@ -142,7 +142,7 @@ const AdminLayout = () => {
                 <FaRegNewspaper className="w-5 h-5 mr-3" />
                 <span>Manajemen News</span>
               </div>
-            </NavLink> */}
+            </NavLink>
           </nav>
         </div>
 

@@ -80,7 +80,9 @@ const AppRouter = () => {
       <Route path="dashboard" element={<DashboardDosen />} />
       <Route path="kelola-jadwal" element={<KelolaJadwal />} />
       <Route path="daftar-mahasiswa" element={<DaftarMahasiswa />} />
-      <Route path="profil" element={<ProfileDosen />} /> {/* Fixed the ProfileDosen element syntax */}
+      <Route path="profil" element={<ProfileDosen />} /> 
+      <Route path="news" element={<News />} />
+      {/* Fixed the ProfileDosen element syntax */}
     </Route>
   </Route>
 

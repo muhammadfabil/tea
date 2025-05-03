@@ -4,6 +4,8 @@ import { Menu, X, LogOut, LayoutDashboard, Calendar, Users } from "lucide-react"
 import { useAuth } from "../context/AuthContext";
 import { LiaChalkboardTeacherSolid } from "react-icons/lia";
 import { GrTechnology } from "react-icons/gr";
+import { FaRegNewspaper } from "react-icons/fa6";
+
 
 const DosenLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -105,6 +107,20 @@ const DosenLayout = () => {
                 <span>Profile</span>
               </div>
             </NavLink>
+            <NavLink
+              to="/dosen/news"
+              className={({ isActive }) =>
+                `${navItem} ${isActive ? activeNav : "text-gray-700"}`
+              }
+            >
+              <div className="flex items-center">
+                <FaRegNewspaper className="w-5 h-5 mr-3" />
+                <span>News IF</span>
+              </div>
+            </NavLink>
+
+          
+            
           </nav>
         </div>
 
