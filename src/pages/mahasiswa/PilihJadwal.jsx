@@ -95,7 +95,7 @@ const JadwalBimbinganMahasiswa = () => {
     }
 
     // Create WebSocket connection with current token from AuthContext
-    socketRef.current = new WebSocket(`${API.replace('https', 'ws')}/ws?token=${token}`);
+    socketRef.current = new WebSocket(`${API.replace('http', 'ws')}/ws?token=${token}`);
 
     // Connection opened
     socketRef.current.addEventListener("open", () => {
@@ -216,7 +216,7 @@ const JadwalBimbinganMahasiswa = () => {
         setNimMahasiswa(nim);
 
         // Fetch relation data for the logged in student
-        const relationResponse = await fetch(`$/relation/mahasiswa/${nim}`);
+        const relationResponse = await fetch(`${API}/relation/mahasiswa/${nim}`);
         
         if (!relationResponse.ok) {
           throw new Error(`Error fetching relations: ${relationResponse.statusText}`);
