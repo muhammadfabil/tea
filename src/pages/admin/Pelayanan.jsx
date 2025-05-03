@@ -155,7 +155,15 @@ const AdminPelayanan = () => {
 
   const handleSave = async () => {
     try {
-      const { id, status, catatan_admin, jadwal_pengambilan } = selectedItem;
+      const { jadwal_pengambilan } = selectedItem;
+
+      // Validasi tanggal pengambilan
+      if (new Date(jadwal_pengambilan) < new Date()) {
+        toast.error("Tanggal pengambilan tidak boleh di masa lalu");
+        return;
+      }
+
+      const { id, status, catatan_admin } = selectedItem;
 
       await axios.put(`${API}/layanan/pengajuan/${id}`, {
         status,
@@ -466,6 +474,7 @@ const AdminPelayanan = () => {
                     type="datetime-local"
                     value={selectedItem.jadwal_pengambilan?.slice(0, 16) || ""}
                     onChange={(e) => setSelectedItem({ ...selectedItem, jadwal_pengambilan: e.target.value })}
+                    min={new Date().toISOString().slice(0, 16)} // Membatasi tanggal dan waktu minimum
                     className="w-full p-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>

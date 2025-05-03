@@ -23,29 +23,46 @@ export default defineConfig({
         start_url: '/',
         icons: [
           {
-            src: 'pwa-192x192.png',
-            sizes: '192x192',
+            src: 'logo.png', // Gunakan satu file logo
+            sizes: '192x192', // Ukuran untuk ikon kecil
             type: 'image/png',
           },
           {
-            src: 'pwa-512x512.png',
-            sizes: '512x512',
+            src: 'logo.png', // File yang sama
+            sizes: '512x512', // Ukuran untuk ikon besar
             type: 'image/png',
           },
           {
-            src: 'pwa-512x512.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'any maskable',
+            src: 'logo.png', // File yang sama
+            // Ukuran besar untuk maskable icon
+                  type: 'image/png',
+                  purpose: 'any maskable',
+                  },
+                ],
+                },
+                devOptions: {
+                enabled: true,
+                type: 'module',
+                navigateFallback: 'index.html',
+                suppressWarnings: true,
+                },
+                workbox: {
+                runtimeCaching: [
+                  {
+                  urlPattern: /^http:\/\/127\.0\.0\.1:8000\/.*$/, // Sesuaikan dengan domain API Anda
+            handler: 'NetworkOnly', // Jangan cache API
           },
         ],
       },
-      devOptions: {
-        enabled: true,
-        type: 'module',
-        navigateFallback: 'index.html',
-        suppressWarnings: true,
-      },
     }),
   ],
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:8000', // Sesuaikan dengan URL API Anda
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ''),
+      },
+    },
+  },
 });

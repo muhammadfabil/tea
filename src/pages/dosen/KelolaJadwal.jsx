@@ -65,7 +65,7 @@ const KelolaWaktuBimbingan = () => {
       const jadwalIndex = updatedList.findIndex(jadwal => jadwal.bimbingan_id === waktu_id);
       
       if (jadwalIndex !== -1) {
-        // Create a new array that combines existing antrian with any new entries
+        // Create a new array that combines existing antrian dengan any new entries
         if (updatedList[jadwalIndex].antrian_bimbingan) {
           // Get existing antrian IDs for comparison
           const existingAntrianIds = updatedList[jadwalIndex].antrian_bimbingan.map(a => a.id_antrian);
@@ -281,10 +281,12 @@ const KelolaWaktuBimbingan = () => {
     setLoading(true);
     setMessage("");
 
-    if (!userData || !userData.user?.profile?.alias) {
-      console.error("Alias tidak ditemukan:", userData);
-      setMessage("Error: Data pengguna tidak ditemukan atau belum lengkap!");
-      toast.error("Error: Data pengguna tidak ditemukan atau belum lengkap!");
+    const now = new Date();
+    const selectedDateTime = new Date(`${formData.tanggal}T${formData.waktu_mulai}`);
+
+    // Validasi tanggal dan waktu
+    if (selectedDateTime < now) {
+      toast.error("Jadwal tidak boleh di masa lalu");
       setLoading(false);
       return;
     }
@@ -310,8 +312,6 @@ const KelolaWaktuBimbingan = () => {
       });
 
       const result = await response.json();
-      console.log("Response backend:", result);
-
       if (response.ok) {
         setMessage("Jadwal bimbingan berhasil ditambahkan!");
         setJadwalList([...jadwalList, result]);
@@ -319,12 +319,10 @@ const KelolaWaktuBimbingan = () => {
         toast.success("Jadwal bimbingan berhasil ditambahkan!");
         setIsModalOpen(false); // Close modal
       } else {
-        console.error("Gagal simpan:", result);
         setMessage(`Error: ${result.detail || "Terjadi kesalahan saat menyimpan."}`);
         toast.error(result.detail || "Terjadi kesalahan saat menyimpan.");
       }
     } catch (error) {
-      console.error("Request error:", error);
       setMessage(`Error: ${error.message}`);
       toast.error(error.message);
     } finally {
@@ -1004,6 +1002,7 @@ const KelolaWaktuBimbingan = () => {
                     name="tanggal"
                     value={formData.tanggal}
                     onChange={handleChange}
+                    min={new Date().toISOString().split("T")[0]} // Membatasi tanggal minimum ke hari ini
                     className="pl-10 w-full border border-gray-300 rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     required
                   />
@@ -1022,6 +1021,7 @@ const KelolaWaktuBimbingan = () => {
                       name="waktu_mulai"
                       value={formData.waktu_mulai}
                       onChange={handleChange}
+                      min={formData.tanggal === new Date().toISOString().split("T")[0] ? new Date().toISOString().slice(11, 16) : undefined} // Membatasi waktu minimum jika tanggal adalah hari ini
                       className="pl-10 w-full border border-gray-300 rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       required
                     />

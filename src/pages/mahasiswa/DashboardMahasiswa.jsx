@@ -7,6 +7,19 @@ import { toast } from "react-toastify";
 import { Link } from "react-router-dom";
 import { motion, useAnimation, AnimatePresence } from "framer-motion";
 
+// Konversi Base64 URL ke Uint8Array
+function base64UrlToUint8Array(base64Url) {
+  const padding = '='.repeat((4 - (base64Url.length % 4)) % 4);
+  const base64 = (base64Url + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+
 // Animated counter component
 const AnimatedCounter = ({ value, duration = 1.5 }) => {
   const [count, setCount] = useState(0);
@@ -169,6 +182,7 @@ const DashboardMahasiswa = () => {
         const { publicKey } = await response.json();
         console.log('Received public key:', publicKey);
 
+        // Konversi kunci publik VAPID ke Uint8Array
         const applicationServerKey = base64UrlToUint8Array(publicKey);
 
         console.log('Subscribing to push manager...');

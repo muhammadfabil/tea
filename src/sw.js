@@ -37,18 +37,18 @@ registerRoute(
     cacheName: 'image-cache',
     plugins: [
       new CacheableResponsePlugin({ statuses: [0, 200] }),
-      new ExpirationPlugin({ maxEntries: 50, maxAgeSeconds: 60 * 60 * 24 * 30 }),
+      new ExpirationPlugin({ maxEntries: 50, maxAgeSeconds: 60 * 60 * 24 * 30 }), // 30 days
     ],
   })
 );
 
-// Backend API on Railway
+// API Data
 registerRoute(
-  ({ url }) => url.origin.includes('railway.app'),
+  ({ url }) => url.origin.includes('railway.app'), // Sesuaikan dengan domain API Anda
   new NetworkFirst({
     cacheName: 'api-cache',
     plugins: [
-      new ExpirationPlugin({ maxEntries: 50, maxAgeSeconds: 3600 }),
+      new ExpirationPlugin({ maxEntries: 50, maxAgeSeconds: 1800 }), // 1 hour
     ],
   })
 );

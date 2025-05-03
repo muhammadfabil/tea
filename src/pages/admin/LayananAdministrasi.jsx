@@ -694,7 +694,7 @@ const handleToggleStatus = async (id, currentStatus, item) => {
 
       {/* Delete Confirmation Modal */}
       {isDeleteModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900 bg-opacity-50 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-none bg-opacity-50 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md m-4">
             <div className="text-center mb-6">
               <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-4">
