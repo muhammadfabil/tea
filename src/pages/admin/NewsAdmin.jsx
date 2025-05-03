@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import DOMPurify from 'dompurify';
 
 const NewsList = () => {
   const [news, setNews] = useState([]);
@@ -8,6 +9,20 @@ const NewsList = () => {
 
   const API = import.meta.env.VITE_API_BASE_URL;
 
+  // Helper function to ensure HTTPS
+  const ensureHttps = (url) => {
+    if (!url) return url;
+    return url.replace(/^http:\/\//i, 'https://');
+  };
+
+  // Helper function for safe HTML
+  const createSafeHTML = (html) => {
+    if (!html) return { __html: '' };
+    // Convert http to https
+    const httpsHtml = html.replace(/http:\/\//g, 'https://');
+    return { __html: DOMPurify.sanitize(httpsHtml) };
+  };
+
   useEffect(() => {
     const fetchNews = async () => {
       try {
@@ -15,7 +30,7 @@ const NewsList = () => {
         setError(null);
 
         // Pastikan URL menggunakan HTTPS
-        const response = await axios.get(`${API}/news`);
+        const response = await axios.get(`${API}/berita`);
         setNews(response.data);
       } catch (err) {
         console.error('Error fetching news:', err);
@@ -48,7 +63,7 @@ const NewsList = () => {
               <h2>{item.title}</h2>
               {item.picture_url && (
                 <img
-                  src={item.picture_url}
+                  src={ensureHttps(item.picture_url)}
                   alt={item.picture_description || 'Gambar berita'}
                   style={{ maxWidth: '100%', height: 'auto', marginBottom: '8px' }}
                 />
@@ -66,7 +81,10 @@ const NewsList = () => {
               {item.update_at && (
                 <p><strong>Diperbarui pada:</strong> {new Date(item.update_at).toLocaleDateString()}</p>
               )}
-              <p><strong>Konten:</strong> {item.content}</p>
+              <div>
+                <strong>Konten:</strong>
+                <div dangerouslySetInnerHTML={createSafeHTML(item.content)} />
+              </div>
             </li>
           ))}
         </ul>

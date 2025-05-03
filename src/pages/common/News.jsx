@@ -25,7 +25,7 @@ const News = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await axios.get(`${API}/news`);
+      const response = await axios.get(`${API}/berita`);
       setNews(response.data);
     } catch (err) {
       console.error('Error fetching news:', err);
@@ -76,8 +76,10 @@ const News = () => {
 
   // Sanitize HTML content
   const createSafeHTML = (html) => {
+    // Replace all http:// with https:// in the HTML
+    const httpsHtml = html ? html.replace(/http:\/\//g, "https://") : "";
     return {
-      __html: DOMPurify.sanitize(html)
+      __html: DOMPurify.sanitize(httpsHtml)
     };
   };
 
