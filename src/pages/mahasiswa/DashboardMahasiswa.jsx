@@ -404,7 +404,7 @@ const DashboardMahasiswa = () => {
             >
               <FaFileAlt className="w-7 h-7 text-green-600" />
             </motion.div>
-            <Link to="/mahasiswa/status-pelayanan" className="text-green-600 text-sm hover:underline flex items-center">
+            <Link to="/mahasiswa/status-layanan" className="text-green-600 text-sm hover:underline flex items-center">
               Lihat Pelayanan <FaExternalLinkAlt size={12} className="ml-1" />
             </Link>
           </div>
@@ -519,7 +519,7 @@ const DashboardMahasiswa = () => {
                 Pengajuan Layanan Terbaru
               </h2>
               <Link 
-                to="/mahasiswa/ajukan-pelayanan"
+                to="/mahasiswa/ajukan-layanan"
                 className="text-sm bg-green-50 text-green-600 px-3 py-1 rounded-lg hover:bg-green-100 transition"
               >
                 Ajukan
@@ -545,7 +545,7 @@ const DashboardMahasiswa = () => {
                 
                 {statusPelayanan.length > 3 && (
                   <Link 
-                    to="/mahasiswa/status-pelayanan"
+                    to="/mahasiswa/status-layanan"
                     className="block text-center text-sm text-green-600 hover:bg-green-50 py-2 border rounded-lg transition-all duration-200"
                   >
                     Lihat {statusPelayanan.length - 3} layanan lainnya
@@ -560,7 +560,7 @@ const DashboardMahasiswa = () => {
                   Anda belum mengajukan layanan administrasi
                 </p>
                 <Link 
-                  to="/mahasiswa/ajukan-pelayanan"
+                  to="/mahasiswa/ajukan-layanan"
                   className="inline-flex items-center px-4 py-2 text-sm font-medium text-green-600 bg-green-50 rounded-lg hover:bg-green-100 transition"
                 >
                   <FaFileAlt size={16} className="mr-2" />

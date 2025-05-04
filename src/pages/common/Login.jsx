@@ -91,7 +91,7 @@ const Login = () => {
 
       // Step 3: Refresh token jika diperlukan (opsional)
       const refreshedToken = await refreshToken();
-      console.log("Token setelah refresh:", refreshedToken);
+      
     } catch (error) {
       console.error("Login error:", error);
       setError(

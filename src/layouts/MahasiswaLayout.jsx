@@ -53,7 +53,7 @@ const MahasiswaLayout = () => {
               <div className="h-8 w-8 rounded-md bg-blue-600 flex items-center justify-center">
                 <FaUserGraduate className="text-white font-bold text-lg" />
               </div>
-              <h2 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 text-transparent bg-clip-text">SI Bimbingan</h2>
+              <h2 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 text-transparent bg-clip-text">Mahasiswa</h2>
             </div>
             <button className="md:hidden text-gray-500 hover:text-gray-700" onClick={toggleSidebar}>
               <X className="w-6 h-6" />
