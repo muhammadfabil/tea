@@ -6,6 +6,7 @@ import {
 import { toast } from "react-toastify";
 import { Link } from "react-router-dom";
 import { motion, useAnimation, AnimatePresence } from "framer-motion";
+import axios from "axios";
 
 // Konversi Base64 URL ke Uint8Array
 function base64UrlToUint8Array(base64Url) {
@@ -58,7 +59,7 @@ const DashboardMahasiswa = () => {
   const [mahasiswaData, setMahasiswaData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [jenisLayanan, setJenisLayanan] = useState({});
-
+  const [totalBimbingan, setTotalBimbingan] = useState(0);
 
   const API = import.meta.env.VITE_API_BASE_URL;
 
@@ -88,40 +89,52 @@ const DashboardMahasiswa = () => {
         nama: authData?.user?.profile?.name || "Mahasiswa",
         prodi: authData?.user?.profile?.prodi || "Teknik Informatika"
       });
+      
+      // Setup axios configs
+      const config = {
+        headers: { Authorization: `Bearer ${token}` }
+      };
 
-      // Fetch semua data secara paralel
-      const [jadwalData, pelayananData, dosenData, antrianData, jenisLayananData] = await Promise.all([
-        // Fetch Jadwal Bimbingan
-        fetch(`${API}/relation/mahasiswa/${nim}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }).then(res => res.json()),
+      // Fetch semua data secara paralel menggunakan axios
+      const [jadwalResponse, pelayananResponse, dosenResponse, jenisLayananResponse] = await Promise.all([
+        // Fetch Relasi Dosen - ini adalah relasi pembimbing, bukan jadwal bimbingan
+        axios.get(`${API}/relation/mahasiswa/${nim}`, config),
         
         // Fetch Status Pelayanan
-        fetch(`${API}/layanan/pengajuan/${nim}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }).then(res => res.json()),
+        axios.get(`${API}/layanan/pengajuan/${nim}`, config),
         
         // Fetch Relasi Dosen
-        fetch(`${API}/dosen/all`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }).then(res => res.json()),
-        
-        // Fetch Antrian Bimbingan
-        fetch(`${API}/antrian/mahasiswa/${nim}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }).then(res => res.json()).catch(() => []),
+        axios.get(`${API}/dosen/all`, config),
         
         // Fetch Jenis Layanan
-        fetch(`${API}/layanan/jenis`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }).then(res => res.json()).catch(() => [])
+        axios.get(`${API}/layanan/jenis`, config)
       ]);
+ 
+      // Gunakan axios untuk endpoint bimbingan mahasiswa
+      let antrianResponse = { data: [] };
+      try {
+        // Ini adalah endpoint untuk jadwal bimbingan yang sudah diambil
+        antrianResponse = await axios.get(`${API}/bimbingan/mahasiswa/${nim}`, config);
+      } catch (err) {
+        console.log("Info: Antrian data tidak tersedia atau endpoint berubah");
+      }
 
-      setJadwalBimbingan(jadwalData);
+      // Fetch riwayat bimbingan untuk mendapatkan total bimbingan
+      let riwayatBimbinganResponse = { data: { jumlah_bimbingan: 0 } };
+      try {
+        riwayatBimbinganResponse = await axios.get(`${API}/mahasiswa/detail/${nim}`, config);
+        setTotalBimbingan(riwayatBimbinganResponse.data.jumlah_bimbingan || 0);
+      } catch (err) {
+        console.log("Info: Data riwayat bimbingan tidak tersedia");
+        setTotalBimbingan(0);
+      }
+
+      // Simpan relasi dosen (bukan jadwal bimbingan)
+      setJadwalBimbingan(jadwalResponse.data);
+      
       // Sort pengajuan layanan dari terbaru ke terlama
-      if (Array.isArray(pelayananData)) {
-        // Sort by most recent submission date, using the same logic as in StatusPelayanan.jsx
-        setStatusPelayanan(pelayananData.sort((a, b) => {
+      if (Array.isArray(pelayananResponse.data)) {
+        setStatusPelayanan(pelayananResponse.data.sort((a, b) => {
           const dateA = new Date(a.lampiran?.[0]?.uploaded_at || a.created_at || 0);
           const dateB = new Date(b.lampiran?.[0]?.uploaded_at || b.created_at || 0);
           return dateB - dateA; // Descending order (newest first)
@@ -129,17 +142,11 @@ const DashboardMahasiswa = () => {
       } else {
         setStatusPelayanan([]);
       }
-      setRelasiDosen(dosenData);
-      setAntrianBimbingan(antrianData);
       
-      // Konversi array jenis layanan menjadi objek dengan id sebagai key
-      const jenisLayananObject = {};
-      if (Array.isArray(jenisLayananData)) {
-        jenisLayananData.forEach(jenis => {
-          jenisLayananObject[jenis.id] = jenis.nama_layanan;
-        });
-      }
-      setJenisLayanan(jenisLayananObject);
+      setRelasiDosen(dosenResponse.data);
+      
+      // Simpan jadwal bimbingan yang sudah diambil
+      setAntrianBimbingan(antrianResponse.data);
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
       toast.error("Gagal memuat data dashboard.");
@@ -175,11 +182,8 @@ const DashboardMahasiswa = () => {
 
       if (!subscription) {
         console.log('Fetching VAPID public key...');
-        const response = await fetch(`${API}/wp/vapid-public-key`);
-        if (!response.ok) {
-          throw new Error(`VAPID public key request failed: ${response.status}`);
-        }
-        const { publicKey } = await response.json();
+        const response = await axios.get(`${API}/wp/vapid-public-key`);
+        const { publicKey } = response.data;
         console.log('Received public key:', publicKey);
 
         // Konversi kunci publik VAPID ke Uint8Array
@@ -196,26 +200,24 @@ const DashboardMahasiswa = () => {
         console.log('Already have a subscription:', subscription);
       }
 
-      // Kirim subscription ke server
+      // Kirim subscription ke server dengan axios
       console.log('Sending subscription to server...');
-      const pushResponse = await fetch(`${API}/wp/push/subscribe`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
+      await axios.post(
+        `${API}/wp/push/subscribe`, 
+        {
           endpoint: subscription.endpoint,
           keys: {
             p256dh: subscription.toJSON().keys.p256dh,
             auth: subscription.toJSON().keys.auth,
           },
-        }),
-      });
-
-      if (!pushResponse.ok) {
-        throw new Error(`Push subscribe failed: ${pushResponse.status}`);
-      }
+        }, 
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          }
+        }
+      );
 
       console.log('Subscription successfully sent to server.');
       setIsSubscribed(true);
@@ -357,7 +359,7 @@ const DashboardMahasiswa = () => {
         transition={{ duration: 0.6 }}
         className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8"
       >
-        {/* Jadwal Bimbingan */}
+        {/* Riwayat Bimbingan (changed from Jadwal Bimbingan) */}
         <motion.div 
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -378,11 +380,11 @@ const DashboardMahasiswa = () => {
               Lihat Jadwal <FaExternalLinkAlt size={12} className="ml-1" />
             </Link>
           </div>
-          <h2 className="text-lg font-semibold text-gray-800 mb-1">Jadwal Bimbingan</h2>
+          <h2 className="text-lg font-semibold text-gray-800 mb-1">Riwayat Bimbingan</h2>
           <p className="text-3xl font-bold text-blue-600 mb-2">
-            <AnimatedCounter value={jadwalBimbingan.length} />
+            <AnimatedCounter value={totalBimbingan} />
           </p>
-          <p className="text-sm text-gray-500">Total relasi pembimbing</p>
+          <p className="text-sm text-gray-500">Total sesi bimbingan</p>
         </motion.div>
 
         {/* Status Pelayanan */}
