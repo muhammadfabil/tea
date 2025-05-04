@@ -60,7 +60,7 @@ const NewsAdmin = () => {
   const fetchNews = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API}/berita`);
+      const response = await axios.get(`${API}/berita/all`);
       setNewsList(response.data);
     } catch (error) {
       console.error('Error fetching news:', error);
@@ -130,7 +130,7 @@ const NewsAdmin = () => {
       }
 
       // Send the request
-      const response = await axios.post(`${API}/berita`, formPayload, {
+      const response = await axios.post(`${API}/berita/baru`, formPayload, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -1000,7 +1000,7 @@ const NewsAdmin = () => {
 
       {/* Delete confirmation modal */}
       {confirmDelete && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-none bg-opacity-50 flex items-center justify-center z-50 p-4  backdrop-blur-sm">
           <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-xl">
             <div className="flex items-center gap-3 text-red-600 mb-4">
               <AlertTriangle size={24} />

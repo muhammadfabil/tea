@@ -44,11 +44,11 @@ registerRoute(
 
 // API Data
 registerRoute(
-  ({ url }) => url.origin.includes('railway.app'), // Sesuaikan dengan domain API Anda
+  ({ url }) => url.origin.includes('https://simantap-api.ifsyscenter.my.id/'), // Sesuaikan dengan domain API Anda
   new NetworkFirst({
     cacheName: 'api-cache',
     plugins: [
-      new ExpirationPlugin({ maxEntries: 50, maxAgeSeconds: 1800 }), // 1 hour
+      new ExpirationPlugin({ maxEntries: 50, maxAgeSeconds: 300 }), // 1 hour
     ],
   })
 );

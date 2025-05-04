@@ -55,7 +55,7 @@ const AppRouter = () => {
   <Route path="/" element={<LandingPage />} />
   <Route path="/login" element={<Login />} />
   <Route path="/register" element={<RegisterMahasiswa />} />
-  <Route path="/antrean-dosen" element={<AntreanDosen />} />
+  <Route path="/status-dosen" element={<AntreanDosen />} />
   <Route path="/reset-pass" element={<ResetPassRequest />} />  {/* Fixed the element syntax */}
   <Route path="/reset-password" element={<ResetPassPage />} />  {/* Fixed the element syntax */}
  

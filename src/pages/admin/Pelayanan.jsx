@@ -3,6 +3,7 @@ import axios from "axios";
 import { format } from "date-fns";
 import { Eye, Pencil, X, FileText, Calendar, User, Tag, Clock, Download, Wifi, WifiOff } from "lucide-react";
 import { toast } from "react-toastify";
+import { useAuth } from "../../context/AuthContext"; // Import useAuth
 
 const STATUS_OPTIONS = ["Menunggu", "Diproses", "Selesai", "Tolak"];
 
@@ -14,7 +15,9 @@ const STATUS_COLORS = {
 };
 
 const API = import.meta.env.VITE_API_BASE_URL;
+
 const AdminPelayanan = () => {
+  const { token } = useAuth(); // Use token from AuthContext
   const [data, setData] = useState([]);
   const [jenisLayananMap, setJenisLayananMap] = useState({});
   const [selectedItem, setSelectedItem] = useState(null);
@@ -27,12 +30,10 @@ const AdminPelayanan = () => {
   const [socketConnected, setSocketConnected] = useState(false); // WebSocket connection status
   const socketRef = useRef(null); // WebSocket reference
 
-  const token = JSON.parse(localStorage.getItem("auth"))?.token;
-
   const fetchMahasiswaName = async (nim) => {
     try {
       const response = await axios.get(`${API}/mahasiswa/${nim}`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${token}` }, // Use token from AuthContext
       });
       return response.data.nama;
     } catch (error) {
@@ -46,10 +47,10 @@ const AdminPelayanan = () => {
     try {
       const [pengajuanRes, jenisRes] = await Promise.all([
         axios.get(`${API}/layanan/pengajuan/all`, {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: { Authorization: `Bearer ${token}` }, // Use token from AuthContext
         }),
         axios.get(`${API}/layanan/jenis`, {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: { Authorization: `Bearer ${token}` }, // Use token from AuthContext
         }),
       ]);
 
@@ -87,8 +88,14 @@ const AdminPelayanan = () => {
   useEffect(() => {
     if (!token) return;
 
-    // Initialize WebSocket connection
-    socketRef.current = new WebSocket(`${API.replace(/^https?/, 'ws')}/ws?token=${token}`);
+    // Tutup koneksi WebSocket lama jika ada
+    if (socketRef.current) {
+      socketRef.current.close();
+      socketRef.current = null;
+    }
+
+    // Inisialisasi koneksi WebSocket baru dengan token yang diperbarui
+    socketRef.current = new WebSocket(`${API.replace(/^https?/, 'wss')}/ws?token=${token}`);
 
     socketRef.current.onopen = () => {
       console.log("✅ WebSocket connected");
@@ -113,7 +120,7 @@ const AdminPelayanan = () => {
       console.log("❌ WebSocket disconnected");
       setSocketConnected(false);
 
-      // Attempt to reconnect after 5 seconds
+      // Coba sambungkan kembali setelah 5 detik jika koneksi terputus
       setTimeout(() => {
         if (socketRef.current?.readyState === WebSocket.CLOSED) {
           console.log("🔄 Attempting to reconnect WebSocket...");
@@ -127,18 +134,18 @@ const AdminPelayanan = () => {
       setSocketConnected(false);
     };
 
-    // Cleanup on component unmount
+    // Cleanup saat komponen di-unmount
     return () => {
       if (socketRef.current) {
         socketRef.current.close();
         socketRef.current = null;
       }
     };
-  }, [token]);
+  }, [token]); // Reconnect WebSocket setiap kali token berubah
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [token]); // Refetch data when token changes
 
   const handleEdit = (item) => {
     setSelectedItem(item);
@@ -170,7 +177,7 @@ const AdminPelayanan = () => {
         catatan_admin,
         jadwal_pengambilan,
       }, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${token}` }, // Use token from AuthContext
       });
 
       toast.success("Pengajuan berhasil diperbarui");

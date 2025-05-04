@@ -1,0 +1,32 @@
+# robots.txt for SIMANTAP
+User-agent: *
+Allow: /
+Allow: /login
+Allow: /status-dosen
+Allow: /news
+
+# Disallow admin and private areas
+Disallow: /admin/
+Disallow: /dosen/
+Disallow: /mahasiswa/
+
+
+# Disallow sensitive functionality
+Disallow: /reset-pass
+Disallow: /reset-password
+Disallow: /register
+
+# Allow bots to access static resources
+Allow: /*.js$
+Allow: /*.css$
+Allow: /*.jpg$
+Allow: /*.jpeg$
+Allow: /*.png$
+Allow: /*.gif$
+Allow: /*.svg$
+
+# Crawl delay for better server performance
+Crawl-delay: 10
+
+# Sitemap location
+Sitemap: https://simantap.ifsyscenter.my.id/

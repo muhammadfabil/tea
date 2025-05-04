@@ -13,6 +13,7 @@ export default defineConfig({
       filename: 'sw.js',
       injectRegister: 'auto',
       registerType: 'autoUpdate',
+      includeAssets: ['logo.png', 'robots.txt'],
       manifest: {
         name: 'Sistem Manajemen Layanan Administrasi dan Antrean Program Studi',
         short_name: 'SIMANTAP',

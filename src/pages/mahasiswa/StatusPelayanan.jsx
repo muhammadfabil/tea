@@ -9,8 +9,10 @@ import {
   FiX, FiCheckCircle, FiExternalLink, FiActivity, FiCornerDownRight
 } from "react-icons/fi";
 import "react-toastify/dist/ReactToastify.css";
+import { useAuth } from "../../context/AuthContext"; // Import AuthContext
 
 const StatusPelayanan = () => {
+  const { token } = useAuth(); // Get token directly from AuthContext
   const [pengajuanList, setPengajuanList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedPengajuan, setSelectedPengajuan] = useState(null);
@@ -23,23 +25,22 @@ const StatusPelayanan = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [jenisLayanan, setJenisLayanan] = useState({});
   const modalRef = useRef(null);
-  const [token, setToken] = useState(() => {
-    const auth = JSON.parse(localStorage.getItem("auth"));
-    return auth?.token || "";
-  });
 
   const API = import.meta.env.VITE_API_BASE_URL;
 
-  // Sync token jika berubah di localStorage (misal karena refresh token)
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const auth = JSON.parse(localStorage.getItem("auth"));
-      if (auth?.token && auth.token !== token) {
-        setToken(auth.token);
-      }
-    }, 2000); // cek setiap 2 detik
-    return () => clearInterval(interval);
-  }, [token]);
+  // Add this function in your StatusPelayanan.jsx file
+  const formatDate = (dateString) => {
+    if (!dateString) return "-"; // Return a placeholder if the date is not provided
+    const options = { 
+      weekday: "long", 
+      year: "numeric", 
+      month: "long", 
+      day: "numeric", 
+      hour: "2-digit", 
+      minute: "2-digit" 
+    };
+    return new Date(dateString).toLocaleDateString("id-ID", options);
+  };
 
   // Function to update service status in real-time
   const updateLayananStatus = useCallback((data) => {
@@ -101,89 +102,81 @@ const StatusPelayanan = () => {
     }
   }, [selectedPengajuan, jenisLayanan]);
   
-  // Setup WebSocket, reconnect jika token berubah
+  // Setup WebSocket with token from AuthContext
   useEffect(() => {
     const authData = JSON.parse(localStorage.getItem("auth"));
     const nim = authData?.user?.profile?.nim;
+
     if (!token || !nim) {
       setSocketConnected(false);
       return;
     }
 
-    // Create WebSocket connection
-    const ws = new WebSocket(`${API.replace(/^https/, 'ws')}/ws?token=${token}`);
-    socketRef.current = ws;
-    
-    // Connection opened
-    ws.addEventListener('open', (event) => {
-      console.log('✅ WebSocket connected for layanan updates');
+    // Tutup koneksi WebSocket lama jika ada
+    if (socketRef.current) {
+      socketRef.current.close();
+      socketRef.current = null;
+    }
+
+    // Inisialisasi koneksi WebSocket baru dengan token yang diperbarui
+    socketRef.current = new WebSocket(`${API.replace(/^https?/, 'wss')}/ws?token=${token}`);
+
+    // Event listener untuk koneksi berhasil
+    socketRef.current.addEventListener("open", () => {
+      console.log("✅ WebSocket connected");
       setSocketConnected(true);
     });
-    
-    // Listen for messages
-    ws.addEventListener('message', (event) => {
+
+    // Event listener untuk pesan WebSocket
+    socketRef.current.addEventListener("message", (event) => {
       try {
-        console.log("Raw WebSocket message:", event.data);
         const data = JSON.parse(event.data);
-        console.log("Parsed WebSocket message:", data);
-        
-        // Direct data format (no event wrapper)
-        if (data.id && data.status && data.mahasiswa_nim) {
-          if (data.mahasiswa_nim === nim) {
-            console.log("Processing direct layanan update");
-            updateLayananStatus(data);
-          }
-          return;
+
+        // Tangani pesan WebSocket
+        if (data.id && data.status && data.mahasiswa_nim === nim) {
+          updateLayananStatus(data);
+        } else if (data.event === "update_layanan" && data.mahasiswa_nim === nim) {
+          updateLayananStatus(data);
+        } else {
+          console.log("Pesan WebSocket tidak dikenali:", data);
         }
-        
-        // Event-wrapped format
-        if (data.event === 'update_layanan') {
-          if (data.mahasiswa_nim === nim) {
-            console.log("Processing event-based layanan update");
-            updateLayananStatus(data);
-          }
-          return;
-        }
-        
-        console.log('Received message in unknown format:', data);
-        
       } catch (err) {
-        console.error('Error parsing WebSocket message:', err);
+        console.error("Error parsing WebSocket message:", err);
       }
     });
-    
-    // Connection closed or error
-    ws.addEventListener('close', (event) => {
-      console.log('❌ WebSocket connection closed, code:', event.code, 'reason:', event.reason);
+
+    // Event listener untuk koneksi terputus
+    socketRef.current.addEventListener("close", (event) => {
+      console.log("❌ WebSocket connection closed:", event.code, event.reason);
       setSocketConnected(false);
-      
-      // Attempt to reconnect after 5 seconds
+
+      // Coba sambungkan kembali setelah 5 detik
       setTimeout(() => {
         if (socketRef.current?.readyState === WebSocket.CLOSED) {
-          console.log('🔄 Attempting to reconnect WebSocket...');
+          console.log("🔄 Attempting to reconnect WebSocket...");
           socketRef.current = null;
         }
       }, 5000);
     });
-    
-    ws.addEventListener('error', (error) => {
-      console.error('WebSocket error:', error);
+
+    // Event listener untuk error
+    socketRef.current.addEventListener("error", (error) => {
+      console.error("WebSocket error:", error);
       setSocketConnected(false);
     });
-    
-    // Clean up on unmount
+
+    // Cleanup saat komponen di-unmount atau token berubah
     return () => {
-      console.log("Cleaning up WebSocket connection");
       if (socketRef.current) {
         socketRef.current.close(1000, "Component unmounting");
         socketRef.current = null;
       }
     };
-  }, [token, updateLayananStatus]);
+  }, [token, updateLayananStatus]); // Tambahkan token ke dependency array
 
   useEffect(() => {
     fetchPengajuanData();
-  }, []);
+  }, [token]); // Added token to dependency array
 
   // Close modal when clicking outside
   useEffect(() => {
@@ -205,17 +198,15 @@ const StatusPelayanan = () => {
   const getAuthData = () => {
     const authData = JSON.parse(localStorage.getItem("auth"));
     return {
-      token: authData?.token,
       nim: authData?.user?.profile?.nim,
       name: authData?.user?.profile?.name
     };
   };
 
   const fetchMahasiswaName = async (nim) => {
-    const { token } = getAuthData();
     try {
-      const response = await axios.get(`${API}/mahasiswa/${nim}`, { // Updated URL
-        headers: { Authorization: `Bearer ${token}` },
+      const response = await axios.get(`${API}/mahasiswa/${nim}`, {
+        headers: { Authorization: `Bearer ${token}` }, // Use token from AuthContext
       });
       return response.data.nama;
     } catch (error) {
@@ -227,7 +218,7 @@ const StatusPelayanan = () => {
   const fetchPengajuanData = async () => {
     try {
       setLoading(true);
-      const { token, nim } = getAuthData();
+      const { nim } = getAuthData();
       
       if (!nim) {
         toast.error("Data mahasiswa tidak ditemukan");
@@ -237,7 +228,7 @@ const StatusPelayanan = () => {
 
       // Fetch jenis layanan untuk mendapatkan nama layanan berdasarkan ID
       const jenisLayananResponse = await axios.get(`${API}/layanan/jenis`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${token}` }, // Use token from AuthContext
       });
       
       // Convert jenis layanan array to object with id as key
@@ -251,7 +242,7 @@ const StatusPelayanan = () => {
 
       // Fetch pengajuan data
       const response = await axios.get(`${API}/layanan/pengajuan/${nim}`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${token}` }, // Use token from AuthContext
       });
       
       setPengajuanList(response.data);
@@ -285,54 +276,6 @@ const StatusPelayanan = () => {
   const closeModal = () => {
     setIsModalOpen(false);
     setTimeout(() => setSelectedPengajuan(null), 200); // Wait for animation
-  };
-
-  const getStatusBadge = (status) => {
-    const base = "px-2.5 py-1 rounded-full text-xs font-semibold inline-flex items-center gap-1";
-    switch (status) {
-      case "Menunggu":
-        return (
-          <span className={`${base} bg-amber-100 text-amber-700 border border-amber-200`}>
-            <FiClock className="w-3 h-3" /> {status}
-          </span>
-        );
-      case "Diproses":
-        return (
-          <span className={`${base} bg-blue-100 text-blue-700 border border-blue-200`}>
-            <FiActivity className="w-3 h-3" /> {status}
-          </span>
-        );
-      case "Selesai":
-        return (
-          <span className={`${base} bg-emerald-100 text-emerald-700 border border-emerald-200`}>
-            <FiCheckCircle className="w-3 h-3" /> {status}
-          </span>
-        );
-      case "Ditolak":
-        return (
-          <span className={`${base} bg-rose-100 text-rose-700 border border-rose-200`}>
-            <FiAlertCircle className="w-3 h-3" /> {status}
-          </span>
-        );
-      default:
-        return (
-          <span className={`${base} bg-gray-100 text-gray-700 border border-gray-200`}>
-            <FiInfo className="w-3 h-3" /> {status}
-          </span>
-        );
-    }
-  };
-
-  const formatDate = (dateString) => {
-    if (!dateString) return "-";
-    const date = new Date(dateString);
-    return date.toLocaleDateString("id-ID", {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
   };
 
   const handleRefresh = async () => {
@@ -373,6 +316,41 @@ const StatusPelayanan = () => {
       const dateB = new Date(b.lampiran?.[0]?.uploaded_at || b.created_at || 0);
       return dateB - dateA; // Descending order (newest first)
     });
+
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case "Menunggu":
+        return (
+          <span className="text-xs font-medium px-2 py-1 rounded-full bg-yellow-100 text-yellow-800">
+            Menunggu
+          </span>
+        );
+      case "Diproses":
+        return (
+          <span className="text-xs font-medium px-2 py-1 rounded-full bg-blue-100 text-blue-800">
+            Diproses
+          </span>
+        );
+      case "Selesai":
+        return (
+          <span className="text-xs font-medium px-2 py-1 rounded-full bg-green-100 text-green-800">
+            Selesai
+          </span>
+        );
+      case "Ditolak":
+        return (
+          <span className="text-xs font-medium px-2 py-1 rounded-full bg-red-100 text-red-800">
+            Ditolak
+          </span>
+        );
+      default:
+        return (
+          <span className="text-xs font-medium px-2 py-1 rounded-full bg-gray-100 text-gray-800">
+            Tidak Diketahui
+          </span>
+        );
+    }
+  };
 
   return (
     <div className="p-4 md:p-8 bg-gray-50 min-h-screen">

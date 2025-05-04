@@ -56,10 +56,10 @@ const LandingPage = () => {
                     <ArrowRight className="w-4 h-4" />
                   </Link>
                   <Link
-                    to="/antrean-dosen"
+                    to="/status-dosen"
                     className="bg-transparent border-2 border-white text-white font-semibold px-6 py-3 rounded-lg hover:bg-white/10 transition duration-200 flex items-center justify-center gap-2"
                   >
-                    <span>Lihat Antrean Dosen</span>
+                    <span>Lihat Status Kehadiran Dosen</span>
                     <Clock className="w-4 h-4" />
                   </Link>
                 </div>
@@ -227,10 +227,10 @@ const LandingPage = () => {
                 <ArrowRight className="w-4 h-4" />
               </Link>
               <Link
-                to="/antrean-dosen"
+                to="/status-dosen"
                 className="bg-transparent border-2 border-blue-400 text-blue-300 font-semibold px-6 py-3 rounded-lg hover:bg-blue-900/30 transition duration-200 flex items-center justify-center gap-2"
               >
-                <span>Lihat Antrean</span>
+                <span>Lihat Status Kehadiran Dosen</span>
                 <Clock className="w-4 h-4" />
               </Link>
             </div>

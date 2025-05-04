@@ -25,7 +25,7 @@ const News = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await axios.get(`${API}/berita`);
+      const response = await axios.get(`${API}/berita/all`);
       setNews(response.data);
     } catch (err) {
       console.error('Error fetching news:', err);

@@ -23,11 +23,12 @@ import {
   Wifi,
   WifiOff
 } from "lucide-react";
+import { useAuth } from "../../context/AuthContext"; // Import AuthContext
 
 const KelolaWaktuBimbingan = () => {
+  const { user, token } = useAuth(); // Ambil user dan token dari AuthContext
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
-  const [userData, setUserData] = useState(null);
   const [jadwalList, setJadwalList] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
@@ -161,97 +162,66 @@ const KelolaWaktuBimbingan = () => {
 
   // Setup WebSocket connection
   useEffect(() => {
-    if (!userData?.user?.profile?.alias) return;
-    
-    const token = userData?.token;
     if (!token) return;
-    
-    // Create WebSocket connection with correct endpoint
-    socketRef.current = new WebSocket(`${API.replace('https', 'ws')}/ws?token=${token}`);
-    
-    // Connection opened
-    socketRef.current.addEventListener('open', (event) => {
-      console.log('✅ WebSocket connected');
+
+    // Tutup WebSocket lama jika ada
+    if (socketRef.current) {
+      socketRef.current.close();
+      socketRef.current = null;
+    }
+
+    // Inisialisasi WebSocket baru dengan token yang diperbarui
+    socketRef.current = new WebSocket(`${API.replace("https", "wss")}/ws?token=${token}`);
+
+    socketRef.current.addEventListener("open", () => {
+      console.log("✅ WebSocket connected");
       setSocketConnected(true);
     });
-    
-    // Listen for messages
-    socketRef.current.addEventListener('message', (event) => {
+
+    socketRef.current.addEventListener("message", (event) => {
       try {
         const data = JSON.parse(event.data);
-        
-        // Handle different event types
+        // Handle WebSocket messages
         switch (data.event) {
-          case 'update_antrian':
+          case "update_antrian":
             updateAntrianStatus(data);
-            handleStudentJoinedQueue(data); // Add this line to handle student joins
+            handleStudentJoinedQueue(data);
             break;
-          case 'new_antrian':
-            // Refresh jadwal list when a new antrian is created
-            if (userData?.user?.profile?.alias) {
-              fetchJadwalBimbingan(userData.user.profile.alias);
-              toast.info(`Mahasiswa baru telah mengambil antrian pada jadwal #${data.waktu_id}`);
-            }
+          case "new_antrian":
+            fetchJadwalBimbingan();
+            toast.info(`Mahasiswa baru telah mengambil antrian pada jadwal #${data.waktu_id}`);
             break;
           default:
-            console.log('Received unknown event:', data.event);
+            console.log("Received unknown event:", data.event);
         }
       } catch (err) {
-        console.error('Error parsing WebSocket message:', err);
+        console.error("Error parsing WebSocket message:", err);
       }
     });
-    
-    // Connection closed or error
-    socketRef.current.addEventListener('close', (event) => {
-      console.log('❌ WebSocket connection closed');
-      setSocketConnected(false);
-      
-      // Attempt to reconnect after 5 seconds
-      setTimeout(() => {
-        if (socketRef.current?.readyState === WebSocket.CLOSED) {
-          console.log('🔄 Attempting to reconnect WebSocket...');
-          // Recursively call this effect to attempt reconnection
-          socketRef.current = null;
-        }
-      }, 5000);
-    });
-    
-    socketRef.current.addEventListener('error', (error) => {
-      console.error('WebSocket error:', error);
+
+    socketRef.current.addEventListener("close", () => {
+      console.log("❌ WebSocket connection closed");
       setSocketConnected(false);
     });
-    
-    // Clean up on unmount
+
+    socketRef.current.addEventListener("error", (error) => {
+      console.error("WebSocket error:", error);
+      setSocketConnected(false);
+    });
+
     return () => {
       if (socketRef.current) {
         socketRef.current.close();
         socketRef.current = null;
       }
     };
-  }, [userData, updateAntrianStatus]);
+  }, [token]); // Perbarui WebSocket setiap kali token berubah
 
-  useEffect(() => {
-    const authData = localStorage.getItem("auth");
-    if (authData) {
-      try {
-        const parsedData = JSON.parse(authData);
-        setUserData(parsedData);
-
-        // Fetch jadwal bimbingan
-        if (parsedData.user?.profile?.alias) {
-          fetchJadwalBimbingan(parsedData.user.profile.alias);
-        }
-      } catch (error) {
-        console.error("Gagal parsing data auth:", error);
-      }
-    }
-  }, []);
-
-  const fetchJadwalBimbingan = async (alias) => {
+  const fetchJadwalBimbingan = async () => {
     try {
-      const response = await fetch(`${API}/waktu_bimbingan/dosen/${alias}`, {
+      const response = await fetch(`${API}/waktu_bimbingan/dosen/${user?.profile?.alias}`, {
         headers: {
-          Authorization: `Bearer ${userData?.token}`,
+          Authorization: `Bearer ${token}`, // Gunakan token dari AuthContext
         },
       });
 
@@ -267,6 +237,10 @@ const KelolaWaktuBimbingan = () => {
       toast.error("Terjadi kesalahan saat mengambil jadwal bimbingan.");
     }
   };
+
+  useEffect(() => {
+    fetchJadwalBimbingan();
+  }, [user, token]); // Refetch jadwal jika token berubah
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -292,7 +266,7 @@ const KelolaWaktuBimbingan = () => {
     }
 
     const payload = {
-      dosen_inisial: userData.user.profile.alias,
+      dosen_inisial: user.profile.alias,
       jumlah_antrian: parseInt(formData.jumlah_antrian),
       tanggal: formData.tanggal,
       waktu_mulai: formData.waktu_mulai,
@@ -306,7 +280,7 @@ const KelolaWaktuBimbingan = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${userData.token}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(payload),
       });
@@ -339,7 +313,7 @@ const KelolaWaktuBimbingan = () => {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${userData.token}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(formData),
       });
@@ -375,7 +349,7 @@ const KelolaWaktuBimbingan = () => {
       const response = await fetch(`${API}/waktu_bimbingan/${selectedJadwal.bimbingan_id}`, {
         method: "DELETE",
         headers: {
-          Authorization: `Bearer ${userData.token}`,
+          Authorization: `Bearer ${token}`,
         },
       });
 
@@ -411,7 +385,7 @@ const KelolaWaktuBimbingan = () => {
       const response = await fetch(endpoint, {
         method: "PUT",
         headers: {
-          Authorization: `Bearer ${userData.token}`,
+          Authorization: `Bearer ${token}`,
         },
       });
 
@@ -425,8 +399,8 @@ const KelolaWaktuBimbingan = () => {
         
         // Beri sedikit waktu sebelum memperbarui UI lagi (opsional)
         setTimeout(() => {
-          if (userData?.user?.profile?.alias) {
-            fetchJadwalBimbingan(userData.user.profile.alias);
+          if (user?.profile?.alias) {
+            fetchJadwalBimbingan();
           }
         }, 500);
       } else {

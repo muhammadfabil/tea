@@ -51,7 +51,7 @@ const RegisterMahasiswa = () => {
     }
 
     try {
-      const res = await axios.post(`${API}/mahasiswa`, {
+      const res = await axios.post(`${API}/mahasiswa/`, {
         nim,
         nama,
         email,

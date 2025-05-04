@@ -85,25 +85,24 @@ const JadwalBimbinganMahasiswa = () => {
 
   // Setup WebSocket connection - FIXED
   useEffect(() => {
-    if (!nimMahasiswa) return;
-    if (!token) return;
-    
-    // Close existing connection if any
+    if (!nimMahasiswa || !token) return;
+
+    // Tutup koneksi WebSocket lama jika ada
     if (socketRef.current) {
       socketRef.current.close();
       socketRef.current = null;
     }
 
-    // Create WebSocket connection with current token from AuthContext
-    socketRef.current = new WebSocket(`${API.replace('http', 'ws')}/ws?token=${token}`);
+    // Inisialisasi koneksi WebSocket baru dengan token yang diperbarui
+    socketRef.current = new WebSocket(`${API.replace('https', 'wss')}/ws?token=${token}`);
 
-    // Connection opened
+    // Event listener untuk koneksi berhasil
     socketRef.current.addEventListener("open", () => {
       console.log("✅ WebSocket connected");
       setSocketConnected(true);
     });
 
-    // Listen for messages
+    // Event listener untuk pesan WebSocket
     socketRef.current.addEventListener("message", (event) => {
       try {
         const data = JSON.parse(event.data);
@@ -117,7 +116,7 @@ const JadwalBimbinganMahasiswa = () => {
             setJadwalByDosen((prevState) => {
               const updatedState = [...prevState];
 
-              // Cari dosen berdasarkan 
+              // Cari dosen berdasarkan inisial
               const dosenIndex = updatedState.findIndex(
                 (dosen) => dosen.dosenAlias === data.inisial
               );
@@ -175,12 +174,12 @@ const JadwalBimbinganMahasiswa = () => {
       }
     });
 
-    // Connection closed or error
+    // Event listener untuk koneksi terputus
     socketRef.current.addEventListener("close", () => {
       console.log("❌ WebSocket connection closed");
       setSocketConnected(false);
 
-      // Attempt to reconnect after 5 seconds
+      // Coba sambungkan kembali setelah 5 detik
       setTimeout(() => {
         if (socketRef.current?.readyState === WebSocket.CLOSED) {
           console.log("🔄 Attempting to reconnect WebSocket...");
@@ -189,19 +188,20 @@ const JadwalBimbinganMahasiswa = () => {
       }, 5000);
     });
 
+    // Event listener untuk error
     socketRef.current.addEventListener("error", (error) => {
       console.error("WebSocket error:", error);
       setSocketConnected(false);
     });
 
-    // Clean up on unmount or token change
+    // Cleanup saat komponen di-unmount atau token berubah
     return () => {
       if (socketRef.current) {
         socketRef.current.close();
         socketRef.current = null;
       }
     };
-  }, [nimMahasiswa, updateAntrianStatus, token]); // Added token to dependency array
+  }, [nimMahasiswa, token, updateAntrianStatus]); // Tambahkan token ke dependency array
 
   useEffect(() => {
     const fetchData = async () => {
@@ -216,7 +216,11 @@ const JadwalBimbinganMahasiswa = () => {
         setNimMahasiswa(nim);
 
         // Fetch relation data for the logged in student
-        const relationResponse = await fetch(`${API}/relation/mahasiswa/${nim}`);
+        const relationResponse = await fetch(`${API}/relation/mahasiswa/${nim}`, {
+          headers: {
+            Authorization: `Bearer ${token}`, // Use token from AuthContext
+          },
+        });
         
         if (!relationResponse.ok) {
           throw new Error(`Error fetching relations: ${relationResponse.statusText}`);
@@ -264,7 +268,7 @@ const JadwalBimbinganMahasiswa = () => {
     };
 
     fetchData();
-  }, []);
+  }, [token]); // Add token to dependency array to refetch when token changes
 
   const formatDate = (dateString) => {
     const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
@@ -358,21 +362,19 @@ const JadwalBimbinganMahasiswa = () => {
     setProcessingAntrianId(antrianId);
 
     try {
-      const auth = JSON.parse(localStorage.getItem('auth'));
-      const currentToken = token || auth?.token; // Use context token or fallback to localStorage
-
-      if (!currentToken) {
+      // Use token directly from AuthContext
+      if (!token) {
         toast.error("Silakan login terlebih dahulu");
         setProcessingAntrian(false);
         setProcessingAntrianId(null);
         return;
       }
 
-      const endpoint = `${API}/antrian/f/${antrianId}`; // Updated URL
+      const endpoint = `${API}/antrian/f/${antrianId}`;
       const response = await fetch(endpoint, {
         method: "PUT",
         headers: {
-          Authorization: `Bearer ${currentToken}`,
+          Authorization: `Bearer ${token}`,
         },
       });
 
@@ -426,10 +428,8 @@ const JadwalBimbinganMahasiswa = () => {
     setSubmitting(true);
     
     try {
-      const auth = JSON.parse(localStorage.getItem('auth'));
-      const currentToken = token || auth?.token; // Use context token or fallback to localStorage
-      
-      if (!currentToken) {
+      // Use token directly from AuthContext
+      if (!token) {
         toast.error("Silakan login terlebih dahulu");
         setSubmitting(false);
         return;
@@ -451,7 +451,7 @@ const JadwalBimbinganMahasiswa = () => {
       const response = await fetch(`${API}/antrian/?${queryParams.toString()}`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${currentToken}`
+          'Authorization': `Bearer ${token}`
         },
         body: formData
       });
