@@ -108,9 +108,9 @@ const AntreanDosen = () => {
         if (dosen.alias === inisial) {
           return {
             ...dosen,
-            status_kehadiran: status, // Pastikan nilai status di-pass ke properti yang benar
+            status_kehadiran: status,
             name: nama || dosen.name,
-            keterangan: keterangan || dosen.keterangan
+            keterangan: keterangan, // Update keterangan even if empty
           };
         }
         return dosen;
@@ -165,6 +165,15 @@ const AntreanDosen = () => {
       return '/';
     }
   };
+
+  const sortedDosenList = [...dosenList].sort((a, b) => {
+    // Sort by status_kehadiran (true first)
+    if (a.status_kehadiran !== b.status_kehadiran) {
+      return a.status_kehadiran ? -1 : 1;
+    }
+    // If same status, sort by alias/name
+    return a.alias.localeCompare(b.alias);
+  });
 
   return (
     <div className="min-h-screen flex flex-col relative overflow-hidden">
@@ -250,7 +259,7 @@ const AntreanDosen = () => {
             animate="visible"
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6 pb-24"
           >
-            {dosenList.map((dosen, index) => (
+            {sortedDosenList.map((dosen, index) => (
               <motion.div
                 key={dosen.id || index}
                 variants={itemVariants}
@@ -264,19 +273,8 @@ const AntreanDosen = () => {
                     : "bg-rose-600 text-white"
                 }`}>
                   <div className="text-3xl font-bold">{dosen.alias}</div>
-                  <div className="mt-2 flex items-center">
-                    {dosen.status_kehadiran ? 
-                      <div className="flex items-center bg-white/20 px-3 py-1 rounded-full">
-                        <FaUserCheck size={14} className="mr-1" /> 
-                        <span className="text-sm font-medium">Hadir</span>
-                      </div> 
-                      : 
-                      <div className="flex items-center bg-white/20 px-3 py-1 rounded-full">
-                        <FaUserTimes size={14} className="mr-1" /> 
-                        <span className="text-sm font-medium">Tidak Hadir</span>
-                      </div>
-                    }
-                  </div>
+                  {/* Nama lengkap dosen */}
+                  <div className="mx-2 mt-1 text-sm font-medium">{dosen.name}</div>
                 </div>
                 
                 {/* Card Body with Keterangan */}
