@@ -4,8 +4,10 @@ import {
   Users, UserCheck, FileText, Clock, BarChart2, 
   CheckCircle, AlertTriangle, UploadCloud 
 } from "lucide-react";
+import { useAuth } from "../../context/AuthContext";
 
 const AdminDashboard = () => {
+  const { user } = useAuth();
   const [stats, setStats] = useState({
     mahasiswa: { total: 0, loading: true },
     dosen: { total: 0, active: 0, loading: true },
@@ -113,10 +115,33 @@ const AdminDashboard = () => {
     }
   };
 
+  // Function to get user name
+  const getUserName = () => {
+    // Coba ambil dari context pertama
+    if (user?.nama) return user.nama;
+    if (user?.name) return user.name;
+    if (user?.profile?.name) return user.profile.name;
+    
+    // Jika tidak ada, coba ambil dari localStorage
+    try {
+      const stored = localStorage.getItem("auth");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        return parsed.user?.profile?.name || parsed.user?.nama || parsed.user?.name || "Admin";
+      }
+    } catch (e) {
+      console.error("Error parsing auth data:", e);
+    }
+    
+    return "Admin";
+  };
+
   return (
     <div className="space-y-8">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-slate-800">Dashboard Admin</h1>
+        <div>
+          <h1 className="text-2xl font-bold text-slate-800">Selamat Datang, {getUserName()}</h1>
+        </div>
         <p className="text-sm text-slate-500">
           {new Date().toLocaleDateString('id-ID', { 
             weekday: 'long', 

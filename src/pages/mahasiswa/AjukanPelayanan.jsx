@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useDropzone } from "react-dropzone";
 import { 
   FiUploadCloud, 
@@ -10,7 +10,10 @@ import {
   FiDownload, 
   FiCheckCircle, 
   FiAlertTriangle,
-  FiSend
+  FiSend,
+  FiSearch,
+  FiChevronDown,
+  FiChevronUp
 } from "react-icons/fi";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
 
@@ -114,6 +117,24 @@ const AjukanPelayanan = () => {
   const [berkas, setBerkas] = useState(null);
   const [lampiran, setLampiran] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const dropdownRef = useRef(null);
+
+  const filteredLayanan = layananList.filter((layanan) =>
+    layanan.nama_layanan.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    }
+    
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   useEffect(() => {
     fetch(`${API}/layanan/jenis`)
@@ -156,9 +177,7 @@ const AjukanPelayanan = () => {
     formData.append("berkas_utama", berkas);
   
     if (lampiran) {
-      formData.append("lampiran_tambahan", lampiran); // jika hanya satu lampiran
-      // Jika nanti ingin support banyak lampiran:
-      // formData.append("lampiran_tambahan[]", lampiran);
+      formData.append("lampiran_tambahan", lampiran);
     }
   
     try {
@@ -210,29 +229,74 @@ const AjukanPelayanan = () => {
         >
           <div>
             <label className="block mb-2 font-medium text-gray-700">Pilih Layanan</label>
-            <div className="relative">
-              <select
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm appearance-none bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition"
-                value={selectedLayanan?.id || ""}
-                onChange={(e) => {
-                  const layanan = layananList.find(
-                    (item) => item.id === parseInt(e.target.value)
-                  );
-                  setSelectedLayanan(layanan || null);
-                }}
+            <div className="relative" ref={dropdownRef}>
+              <div 
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className={`w-full border border-gray-300 rounded-lg px-4 py-3 text-sm bg-white hover:border-blue-400 cursor-pointer flex justify-between items-center ${isDropdownOpen ? 'border-blue-500 ring-2 ring-blue-200' : ''}`}
               >
-                <option value="">-- Pilih Layanan --</option>
-                {layananList.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.nama_layanan}
-                  </option>
-                ))}
-              </select>
-              <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-500">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
-                </svg>
+                <span className={selectedLayanan ? 'text-gray-800' : 'text-gray-500'}>
+                  {selectedLayanan ? selectedLayanan.nama_layanan : '-- Pilih Layanan --'}
+                </span>
+                <div className="text-gray-500">
+                  {isDropdownOpen ? <FiChevronUp size={18} /> : <FiChevronDown size={18} />}
+                </div>
               </div>
+              
+              <AnimatePresence>
+                {isDropdownOpen && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute z-10 mt-1 w-full bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden"
+                  >
+                    <div className="p-2 border-b border-gray-100">
+                      <div className="relative">
+                        <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                        <input
+                          type="text"
+                          placeholder="Cari layanan..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          className="w-full pl-9 pr-4 py-2 rounded-md border border-gray-200 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-200 outline-none"
+                          autoFocus
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="max-h-60 overflow-y-auto py-1">
+                      {filteredLayanan.length > 0 ? (
+                        filteredLayanan.map((item) => (
+                          <div
+                            key={item.id}
+                            onClick={() => {
+                              setSelectedLayanan(item);
+                              setIsDropdownOpen(false);
+                              setSearchQuery("");
+                            }}
+                            className={`px-4 py-2.5 text-sm hover:bg-blue-50 cursor-pointer ${
+                              selectedLayanan?.id === item.id ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
+                            }`}
+                          >
+                            <div className="font-medium">{item.nama_layanan}</div>
+                            {item.deskripsi && (
+                              <div className="text-xs text-gray-500 mt-1 line-clamp-1">
+                                {item.deskripsi}
+                              </div>
+                            )}
+                          </div>
+                        ))
+                      ) : (
+                        <div className="px-4 py-3 text-sm text-gray-500 text-center italic">
+                          Tidak ada layanan yang sesuai
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
 

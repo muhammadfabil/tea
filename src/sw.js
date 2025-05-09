@@ -65,8 +65,8 @@ self.addEventListener("push", (event) => {
   const title = data.title || "Notifikasi Baru";
   const options = {
     body: data.body || "Anda memiliki notifikasi baru.",
-    icon: "/pwa-192x192.png",
-    badge: "/pwa-192x192.png",
+    icon: "/logo.png",
+    badge: "/logo.png",
     data: {
       url: data.url || "/",
     },

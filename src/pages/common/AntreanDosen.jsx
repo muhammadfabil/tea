@@ -1,16 +1,34 @@
 import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import { motion } from "framer-motion";
-import { FaUserCheck, FaUserTimes, FaChalkboardTeacher } from "react-icons/fa";
+import { FaUserCheck, FaUserTimes, FaChalkboardTeacher, FaArrowLeft } from "react-icons/fa";
 import { BiTimeFive } from "react-icons/bi";
 import { IoIosSchool } from "react-icons/io";
 import { GrTechnology } from "react-icons/gr";
+import { Link, useLocation } from "react-router-dom";
 
 const AntreanDosen = () => {
   const [time, setTime] = useState(new Date());
   const [dosenList, setDosenList] = useState([]);
   const wsRef = useRef(null);
   const API = import.meta.env.VITE_API_BASE_URL;
+  const location = useLocation();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userRole, setUserRole] = useState(null);
+
+  useEffect(() => {
+    // Check if user is logged in
+    const auth = localStorage.getItem("auth");
+    if (auth) {
+      try {
+        const authData = JSON.parse(auth);
+        setIsLoggedIn(true);
+        setUserRole(authData.user?.role || null);
+      } catch (error) {
+        console.error("Error parsing auth data:", error);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
@@ -47,7 +65,7 @@ const AntreanDosen = () => {
           if (data && data["Inisial Dosen"]) {
             updateDosenStatus(
               data["Inisial Dosen"],
-              data["Status Kehadiran"], // Perbaikan nama properti (sebelumnya "Status Kehadrian")
+              data["Status Kehadiran"], 
               data["Nama Dosen"],
               data["Keterangan"] || "" 
             );
@@ -129,6 +147,25 @@ const AntreanDosen = () => {
     }
   };
 
+  // Determine back button destination
+  const getBackButtonLink = () => {
+    if (isLoggedIn) {
+      // If user is logged in, determine which dashboard to return to based on role
+      if (userRole === 'mahasiswa') {
+        return '/mahasiswa/dashboard';
+      } else if (userRole === 'dosen') {
+        return '/dosen/dashboard';
+      } else if (userRole === 'admin') {
+        return '/admin/dashboard';
+      } else {
+        return '/';
+      }
+    } else {
+      // If not logged in, return to landing page
+      return '/';
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col relative overflow-hidden">
       {/* Decorative accent elements for left and right sides */}
@@ -164,6 +201,14 @@ const AntreanDosen = () => {
             transition={{ duration: 0.5 }}
             className="flex items-center mb-3 sm:mb-0"
           >
+            {/* Back button */}
+            <Link 
+              to={getBackButtonLink()} 
+              className="mr-3 bg-white/20 hover:bg-white/30 p-2 rounded-full transition-colors duration-200"
+            >
+              <FaArrowLeft className="text-white w-5 h-5" />
+            </Link>
+            
             <div className="bg-white rounded-full p-2 mr-4 shadow-md">
               <GrTechnology className="w-7 h-7 text-blue-700" />
             </div>
@@ -203,7 +248,7 @@ const AntreanDosen = () => {
             variants={containerVariants}
             initial="hidden"
             animate="visible"
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6 pb-24"
           >
             {dosenList.map((dosen, index) => (
               <motion.div
@@ -253,6 +298,37 @@ const AntreanDosen = () => {
           </motion.div>
         </div>
       </div>
+
+      {/* Floating navigation button */}
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5, duration: 0.5 }}
+        className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-30"
+      >
+        <div className="flex items-center justify-center gap-3">
+          <Link 
+            to={getBackButtonLink()}
+            className="group flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300"
+          >
+            <div className="rounded-full bg-white/20 p-1.5 transition-all duration-300 group-hover:bg-white/30">
+              <FaArrowLeft className="w-4 h-4" />
+            </div>
+            <span className="font-medium">
+              {isLoggedIn ? 'Kembali ke Dashboard' : 'Kembali ke Beranda'}
+            </span>
+          </Link>
+          
+          {!isLoggedIn && (
+            <Link 
+              to="/login"
+              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300"
+            >
+              <span className="font-medium">Masuk</span>
+            </Link>
+          )}
+        </div>
+      </motion.div>
     </div>
   );
 };

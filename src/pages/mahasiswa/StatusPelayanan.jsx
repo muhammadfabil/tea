@@ -337,7 +337,7 @@ const StatusPelayanan = () => {
             Selesai
           </span>
         );
-      case "Ditolak":
+      case "Tolak":
         return (
           <span className="text-xs font-medium px-2 py-1 rounded-full bg-red-100 text-red-800">
             Ditolak
@@ -444,7 +444,7 @@ const StatusPelayanan = () => {
                   <option value="Menunggu">Menunggu</option>
                   <option value="Diproses">Diproses</option>
                   <option value="Selesai">Selesai</option>
-                  <option value="Ditolak">Ditolak</option>
+                  <option value="Tolak">Ditolak</option>
                 </select>
                 <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                   <FiChevronRight className="h-4 w-4 text-gray-400" />
@@ -490,7 +490,7 @@ const StatusPelayanan = () => {
                   pengajuan.status === "Menunggu" ? "bg-amber-400" :
                   pengajuan.status === "Diproses" ? "bg-blue-500" :
                   pengajuan.status === "Selesai" ? "bg-emerald-500" :
-                  pengajuan.status === "Ditolak" ? "bg-rose-500" : "bg-gray-300"
+                  pengajuan.status === "Tolak" ? "bg-rose-500" : "bg-gray-300"
                 }`}></div>
                 
                 <div className="p-5">
@@ -534,12 +534,12 @@ const StatusPelayanan = () => {
                       <span className="relative flex h-3 w-3">
                         <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${
                           pengajuan.status === "Selesai" ? "bg-emerald-400" : 
-                          pengajuan.status === "Ditolak" ? "bg-rose-400" : 
+                          pengajuan.status === "Tolak" ? "bg-rose-400" : 
                           pengajuan.status === "Menunggu" ? "bg-amber-400" : "bg-blue-400"
                         } opacity-75`}></span>
                         <span className={`relative inline-flex rounded-full h-3 w-3 ${
                           pengajuan.status === "Selesai" ? "bg-emerald-500" : 
-                          pengajuan.status === "Ditolak" ? "bg-rose-500" : 
+                          pengajuan.status === "Tolak" ? "bg-rose-500" : 
                           pengajuan.status === "Menunggu" ? "bg-amber-500" : "bg-blue-500"
                         }`}></span>
                       </span>
@@ -602,7 +602,7 @@ const StatusPelayanan = () => {
                 Reset Filter
               </motion.button>
             ) : (
-              <a href="/mahasiswa/ajukan-pelayanan" className="px-4 py-2.5 bg-blue-600 text-white rounded-lg font-medium inline-flex items-center gap-2 hover:bg-blue-700 transition shadow-sm">
+              <a href="/mahasiswa/ajukan-layanan" className="px-4 py-2.5 bg-blue-600 text-white rounded-lg font-medium inline-flex items-center gap-2 hover:bg-blue-700 transition shadow-sm">
                 <FiFileText size={16} />
                 Ajukan Pelayanan Baru
               </a>
@@ -634,7 +634,7 @@ const StatusPelayanan = () => {
                     selectedPengajuan.status === "Menunggu" ? "bg-amber-400" :
                     selectedPengajuan.status === "Diproses" ? "bg-blue-500" :
                     selectedPengajuan.status === "Selesai" ? "bg-emerald-500" :
-                    selectedPengajuan.status === "Ditolak" ? "bg-rose-500" : "bg-gray-300"
+                    selectedPengajuan.status === "Tolak" ? "bg-rose-500" : "bg-gray-300"
                   } rounded-t-xl`}></div>
                   <div className="p-6 border-b flex justify-between items-center mt-2">
                     <div>
@@ -675,13 +675,13 @@ const StatusPelayanan = () => {
                         ${selectedPengajuan.status === "Menunggu" ? "bg-amber-100 text-amber-700 border border-amber-200" :
                           selectedPengajuan.status === "Diproses" ? "bg-blue-100 text-blue-700 border border-blue-200" :
                           selectedPengajuan.status === "Selesai" ? "bg-emerald-100 text-emerald-700 border border-emerald-200" :
-                          selectedPengajuan.status === "Ditolak" ? "bg-rose-100 text-rose-700 border border-rose-200" : "bg-gray-100 text-gray-700 border border-gray-200"
+                          selectedPengajuan.status === "Tolak" ? "bg-rose-100 text-rose-700 border border-rose-200" : "bg-gray-100 text-gray-700 border border-gray-200"
                         }`}
                     >
                       {selectedPengajuan.status === "Menunggu" && <FiClock className="w-4 h-4" />}
                       {selectedPengajuan.status === "Diproses" && <FiActivity className="w-4 h-4" />}
                       {selectedPengajuan.status === "Selesai" && <FiCheckCircle className="w-4 h-4" />}
-                      {selectedPengajuan.status === "Ditolak" && <FiAlertCircle className="w-4 h-4" />}
+                      {selectedPengajuan.status === "Tolak" && <FiAlertCircle className="w-4 h-4" />}
                       {selectedPengajuan.status}
                     </motion.div>
                   </div>
@@ -724,7 +724,7 @@ const StatusPelayanan = () => {
                         {/* Sedang Diproses Step */}
                         {(selectedPengajuan.status === "Diproses" || 
                           selectedPengajuan.status === "Selesai" || 
-                          selectedPengajuan.status === "Ditolak") && (
+                          selectedPengajuan.status === "Tolak") && (
                           <>
                             <div className="absolute -left-[9px] top-[72px] w-4 h-4 rounded-full border-2 border-blue-500 bg-white"></div>
                             <div className="mb-6">
@@ -754,14 +754,14 @@ const StatusPelayanan = () => {
                         )}
                         
                         {/* Ditolak Step - Specialized UI */}
-                        {(selectedPengajuan.status === "Ditolak") && (
+                        {(selectedPengajuan.status === "Tolak") && (
                           <>
                             <div className="absolute -left-[9px] top-[144px] w-4 h-4 rounded-full border-2 border-rose-500 bg-white"></div>
                             <div className="mb-6">
                               <div className="flex items-center">
                                 <p className="text-sm font-medium text-rose-700">Pengajuan Ditolak</p>
                                 <span className="ml-2 text-xs bg-rose-50 text-rose-700 px-2 py-0.5 rounded-full border border-rose-200">
-                                  Tidak disetujui
+                                  Periksa Catatan Admin
                                 </span>
                               </div>
                               <p className="text-xs text-gray-500">
@@ -908,7 +908,7 @@ const StatusPelayanan = () => {
                 
                 <div className="p-5 border-t bg-gray-50 flex justify-between items-center">
                   <a
-                    href="/mahasiswa/ajukan-pelayanan"
+                    href="/mahasiswa/ajukan-layanan"
                     className="text-blue-600 hover:text-blue-800 text-sm flex items-center gap-1.5 hover:underline"
                   >
                     <FiCornerDownRight size={14} />

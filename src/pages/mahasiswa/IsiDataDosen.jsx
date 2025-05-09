@@ -25,10 +25,10 @@ import "react-toastify/dist/ReactToastify.css";
 const ROLE_MAPPING = {
   wali: ["Dosen Wali", 1],
   kp: ["Dosen KP", 1],
-  pbb1: ["Dosen Pembimbing 1", 1],
-  pbb2: ["Dosen Pembimbing 2", 1],
-  pj1: ["Dosen Penguji 1", 1],
-  pj2: ["Dosen Penguji 2", 1],
+  pbb1: ["Dosen Pembimbing 1", 2],
+  pbb2: ["Dosen Pembimbing 2", 2],
+  pj1: ["Dosen Penguji 1", 2],
+  pj2: ["Dosen Penguji 2", 2],
 };
 
 const roleColors = {
@@ -108,14 +108,39 @@ const IsiDataDosen = () => {
       return;
     }
 
-    // Cek apakah peran sudah ada di relations
+    // Get the role details
+    const roleDetails = ROLE_MAPPING[formData.role];
+    const roleGroup = roleDetails[1]; // 1 for group 1 (wali, kp), 2 for group 2 (pbb1, pbb2, pj1, pj2)
+    const roleName = roleDetails[0];
+
+    // Validation step 1: Check if the role itself already exists
     const roleExists = relations.some(
-      rel => rel.role === ROLE_MAPPING[formData.role][0] && rel.id !== isEditing
+      rel => rel.role === roleName && rel.id !== isEditing
     );
 
-    if (roleExists && !isEditing) {
+    if (roleExists) {
       toast.warning("Peran ini sudah ditambahkan sebelumnya!");
       return;
+    }
+
+    // Validation step 2: If adding/editing a Group 2 role, check that the lecturer 
+    // isn't already assigned to another Group 2 role
+    if (roleGroup === 2) {
+      const group2Roles = Object.keys(ROLE_MAPPING)
+        .filter(key => ROLE_MAPPING[key][1] === 2)
+        .map(key => ROLE_MAPPING[key][0]);
+      
+      const lecturerHasGroup2Role = relations.some(
+        rel => rel.dosen_alias === formData.dosen_alias && 
+              group2Roles.includes(rel.role) && 
+              rel.id !== isEditing
+      );
+
+      if (lecturerHasGroup2Role) {
+        toast.warning("Dosen ini sudah ditugaskan sebagai pembimbing atau penguji lain!");
+        toast.info("Seorang dosen tidak dapat menjabat sebagai Pembimbing 1, Pembimbing 2, Penguji 1, dan Penguji 2 sekaligus.");
+        return;
+      }
     }
 
     // Perubahan payload untuk memastikan data dikirim dengan format yang benar
@@ -210,9 +235,10 @@ const IsiDataDosen = () => {
               <h3 className="font-semibold text-blue-800 mb-1">Informasi Pengisian Data Dosen</h3>
               <ul className="text-sm text-blue-700 space-y-1 list-disc list-inside">
                 <li>Data dosen diperlukan untuk keperluan akademik seperti bimbingan, KP, dan sidang</li>
+                <li>Dosen yang sama dapat menjadi Dosen Wali, Dosen KP, dan salah satu peran lain secara bersamaan</li>
+                <li>Dosen Pembimbing 1, Pembimbing 2, Penguji 1, dan Penguji 2 harus dosen yang berbeda</li>
                 <li>Pastikan data yang diisi sesuai dengan ketentuan program studi</li>
                 <li>Untuk perubahan dosen, silakan hubungi admin jika tombol edit tidak tersedia</li>
-                <li>Anda dapat mengubah atau menghapus relasi dosen yang sudah ditambahkan</li>
               </ul>
             </div>
           </div>

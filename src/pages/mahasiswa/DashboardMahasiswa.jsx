@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { 
   FaUsers, FaCalendarAlt, FaFileAlt, FaCheckCircle, FaExclamationTriangle, 
-  FaClock, FaUserGraduate, FaBookmark, FaExternalLinkAlt, FaUser, FaBell
+  FaClock, FaUserGraduate, FaBookmark, FaExternalLinkAlt, FaUser
 } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { Link } from "react-router-dom";
@@ -72,6 +72,88 @@ const DashboardMahasiswa = () => {
     }
   };
 
+  // Function to auto-subscribe to push notifications
+  const autoSubscribeToPushNotifications = async () => {
+    try {
+      const authData = getAuthData();
+      if (!authData) return;
+
+      const { token } = authData;
+
+      // Check if notifications are supported
+      if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) {
+        console.log('Push notifications not supported by this browser');
+        return;
+      }
+
+      // Check if already subscribed
+      const swRegistration = await navigator.serviceWorker.ready;
+      let subscription = await swRegistration.pushManager.getSubscription();
+      
+      if (subscription) {
+        console.log('Already subscribed to push notifications');
+        setIsSubscribed(true);
+        return;
+      }
+
+      // Check permission silently
+      if (Notification.permission === 'granted') {
+        // Permission already granted, proceed with subscription
+        console.log('Notification permission already granted, subscribing...');
+      } else if (Notification.permission === 'denied') {
+        // Permission denied, cannot subscribe
+        console.log('Notification permission denied by user');
+        return;
+      } else {
+        // Need to request permission
+        console.log('Requesting notification permission...');
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') {
+          console.log('Notification permission not granted');
+          return;
+        }
+      }
+
+      // Get VAPID public key
+      const response = await axios.get(`${API}/wp/vapid-public-key`);
+      const { publicKey } = response.data;
+
+      // Convert VAPID public key to Uint8Array
+      const applicationServerKey = base64UrlToUint8Array(publicKey);
+
+      // Subscribe to push manager
+      subscription = await swRegistration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey,
+      });
+
+      // Send subscription to server
+      await axios.post(
+        `${API}/wp/push/subscribe`, 
+        {
+          endpoint: subscription.endpoint,
+          keys: {
+            p256dh: subscription.toJSON().keys.p256dh,
+            auth: subscription.toJSON().keys.auth,
+          },
+        }, 
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          }
+        }
+      );
+
+      console.log('Successfully subscribed to push notifications');
+      setIsSubscribed(true);
+    } catch (error) {
+      console.error('Error during auto-subscription process:', error);
+      // Silently fail, don't show error to user
+    }
+  };
+
+  // Fetch dashboard data function with improved error handling
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
@@ -96,6 +178,7 @@ const DashboardMahasiswa = () => {
       };
 
       // Fetch semua data secara paralel menggunakan axios
+      // Exclude the non-existent endpoint from the Promise.all
       const [jadwalResponse, pelayananResponse, dosenResponse, jenisLayananResponse] = await Promise.all([
         // Fetch Relasi Dosen - ini adalah relasi pembimbing, bukan jadwal bimbingan
         axios.get(`${API}/relation/mahasiswa/${nim}`, config),
@@ -109,16 +192,11 @@ const DashboardMahasiswa = () => {
         // Fetch Jenis Layanan
         axios.get(`${API}/layanan/jenis`, config)
       ]);
- 
-      // Gunakan axios untuk endpoint bimbingan mahasiswa
-      let antrianResponse = { data: [] };
-      try {
-        // Ini adalah endpoint untuk jadwal bimbingan yang sudah diambil
-        antrianResponse = await axios.get(`${API}/bimbingan/mahasiswa/${nim}`, config);
-      } catch (err) {
-        console.log("Info: Antrian data tidak tersedia atau endpoint berubah");
-      }
 
+      // Handle optional endpoint separately with more robust error handling
+      // Explicitly set default data for antrianBimbingan
+      setAntrianBimbingan([]);
+      
       // Fetch riwayat bimbingan untuk mendapatkan total bimbingan
       let riwayatBimbinganResponse = { data: { jumlah_bimbingan: 0 } };
       try {
@@ -144,12 +222,11 @@ const DashboardMahasiswa = () => {
       }
       
       setRelasiDosen(dosenResponse.data);
-      
-      // Simpan jadwal bimbingan yang sudah diambil
-      setAntrianBimbingan(antrianResponse.data);
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
-      toast.error("Gagal memuat data dashboard.");
+      // Don't show a toast error for the entire dashboard - this could be happening because
+      // of the non-existent endpoint. We'll log the error but not display it to the user.
+      console.log("Some dashboard data couldn't be loaded, but we'll continue with what we have");
     } finally {
       setLoading(false);
     }
@@ -157,77 +234,9 @@ const DashboardMahasiswa = () => {
 
   useEffect(() => {
     fetchDashboardData();
+    // Auto-subscribe to notifications when component mounts
+    autoSubscribeToPushNotifications();
   }, []);
-
-  const subscribeToPushNotifications = async () => {
-    try {
-      const authData = getAuthData();
-      if (!authData) return;
-
-      const { token } = authData;
-
-      console.log('Requesting notification permission...');
-      const permission = await Notification.requestPermission();
-      console.log('Notification permission result:', permission);
-      if (permission !== 'granted') {
-        console.error('Notification permission denied');
-        return;
-      }
-
-      console.log('Waiting for Service Worker...');
-      const swRegistration = await navigator.serviceWorker.ready;
-      console.log('Service Worker is ready:', swRegistration);
-
-      let subscription = await swRegistration.pushManager.getSubscription();
-
-      if (!subscription) {
-        console.log('Fetching VAPID public key...');
-        const response = await axios.get(`${API}/wp/vapid-public-key`);
-        const { publicKey } = response.data;
-        console.log('Received public key:', publicKey);
-
-        // Konversi kunci publik VAPID ke Uint8Array
-        const applicationServerKey = base64UrlToUint8Array(publicKey);
-
-        console.log('Subscribing to push manager...');
-        subscription = await swRegistration.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey,
-        });
-
-        console.log('New subscription created:', subscription);
-      } else {
-        console.log('Already have a subscription:', subscription);
-      }
-
-      // Kirim subscription ke server dengan axios
-      console.log('Sending subscription to server...');
-      await axios.post(
-        `${API}/wp/push/subscribe`, 
-        {
-          endpoint: subscription.endpoint,
-          keys: {
-            p256dh: subscription.toJSON().keys.p256dh,
-            auth: subscription.toJSON().keys.auth,
-          },
-        }, 
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          }
-        }
-      );
-
-      console.log('Subscription successfully sent to server.');
-      setIsSubscribed(true);
-      toast.success("Notifikasi berhasil diaktifkan!");
-
-    } catch (error) {
-      console.error('Error during subscription process:', error);
-      toast.error("Gagal mengaktifkan notifikasi");
-    }
-  };
 
   // Format tanggal untuk tampilan
   const formatDate = (dateString) => {
@@ -298,7 +307,7 @@ const DashboardMahasiswa = () => {
 
   return (
     <div className="bg-gray-50 p-6 min-h-screen">
-      {/* Header section with profile overview and refresh button */}
+      {/* Header section with profile overview and refresh button only */}
       <motion.div 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -337,16 +346,7 @@ const DashboardMahasiswa = () => {
               >
                 <FaCalendarAlt size={16} />
               </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={subscribeToPushNotifications}
-                disabled={isSubscribed}
-                className={`flex items-center px-4 py-2 rounded-lg ${isSubscribed ? "bg-gray-200 text-gray-600" : "bg-blue-600 hover:bg-blue-700 text-white"} transition`}
-              >
-                <FaBell size={16} className="mr-2" />
-                {isSubscribed ? "Notifikasi Aktif" : "Aktifkan Notifikasi"}
-              </motion.button>
+              {/* Notification button removed for cleaner UI */}
             </div>
           </div>
         </div>

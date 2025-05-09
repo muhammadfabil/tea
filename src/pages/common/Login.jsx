@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import axios from "axios";
 import { FiEye, FiEyeOff } from "react-icons/fi";
+import { FaArrowLeft } from "react-icons/fa";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -57,6 +58,12 @@ const Login = () => {
       return;
     }
 
+    // Simpan ID interceptor
+    const interceptorId = axios.interceptors.response.use(
+      (response) => response,
+      (error) => Promise.reject(error)
+    );
+
     try {
       // Step 1: Login untuk mendapatkan token
       const loginResponse = await axios.post(`${API}/auth/login`, {
@@ -90,16 +97,22 @@ const Login = () => {
       }
 
       // Step 3: Refresh token jika diperlukan (opsional)
-      const refreshedToken = await refreshToken();
-      
+      await refreshToken();
     } catch (error) {
       console.error("Login error:", error);
-      setError(
-        error.response?.data?.detail ||
-        error.message ||
-        "Login gagal. Cek kembali email dan password."
-      );
+
+      if (error.response?.status === 401) {
+        setError("Email atau password salah. Silakan coba lagi.");
+      } else {
+        setError(
+          error.response?.data?.detail ||
+          error.message ||
+          "Login gagal. Cek kembali email dan password."
+        );
+      }
     } finally {
+      // Aktifkan kembali interceptor
+      axios.interceptors.response.eject(interceptorId);
       setIsLoading(false);
     }
   };
@@ -130,6 +143,17 @@ const Login = () => {
 
         {/* Right side - Login Form */}
         <div className="w-full md:w-1/2 bg-white p-10">
+          {/* Back to landing page link at the top of the form */}
+          <div className="mb-6">
+            <Link 
+              to="/"
+              className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 transition-colors"
+            >
+              <FaArrowLeft className="text-sm" />
+              <span className="text-sm font-medium">Kembali ke Beranda</span>
+            </Link>
+          </div>
+
           <div className="md:hidden text-center mb-8">
             <h2 className="text-3xl font-bold text-blue-600">SIMANTAP</h2>
             <p className="text-gray-500 text-sm">Sistem Manajemen Layanan Administrasi dan Antrean Program Studi</p>

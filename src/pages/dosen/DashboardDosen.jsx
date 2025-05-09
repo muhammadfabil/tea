@@ -313,11 +313,15 @@ const DashboardDosen = () => {
           <Users className="w-6 h-6" />
           <span className="font-medium">Lihat Daftar Mahasiswa</span>
         </Link>
-        
-        <div className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white rounded-xl p-5 shadow-sm flex items-center gap-3 transition-all hover:shadow-md cursor-pointer">
+        <Link 
+          to="/dosen/profil"
+          className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white rounded-xl p-5 shadow-sm flex items-center gap-3 transition-all hover:shadow-md cursor-pointer"
+        >
           <CheckCircle2 className="w-6 h-6" />
-          <span className="font-medium">Lihat Status Bimbingan</span>
-        </div>
+          <span className="font-medium">Lihat Profil Saya</span>
+        </Link>
+        
+        
       </div>
     </div>
   );

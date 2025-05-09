@@ -162,35 +162,52 @@ const AdminPelayanan = () => {
 
   const handleSave = async () => {
     try {
-      const { jadwal_pengambilan } = selectedItem;
-
-      // Validasi tanggal pengambilan
-      if (new Date(jadwal_pengambilan) < new Date()) {
-        toast.error("Tanggal pengambilan tidak boleh di masa lalu");
-        return;
+      const { id, status, catatan_admin } = selectedItem;
+      
+      // Jika status Diproses atau Tolak, jadwal pengambilan tidak disertakan
+      const isPickupNeeded = status !== "Diproses" && status !== "Tolak";
+      
+      // Validasi tanggal pengambilan jika diperlukan
+      if (isPickupNeeded && selectedItem.jadwal_pengambilan) {
+        if (new Date(selectedItem.jadwal_pengambilan) < new Date()) {
+          toast.error("Tanggal pengambilan tidak boleh di masa lalu");
+          return;
+        }
+      }
+      
+      // Buat payload berdasarkan status
+      const payload = {
+        status,
+        catatan_admin
+      };
+      
+      // Tambahkan jadwal_pengambilan ke payload hanya jika diperlukan
+      if (isPickupNeeded && selectedItem.jadwal_pengambilan) {
+        payload.jadwal_pengambilan = selectedItem.jadwal_pengambilan;
+      } else if (!isPickupNeeded) {
+        // Jika status Diproses atau Tolak, kosongkan jadwal pengambilan
+        payload.jadwal_pengambilan = null;
       }
 
-      const { id, status, catatan_admin } = selectedItem;
-
-      await axios.put(`${API}/layanan/pengajuan/${id}`, {
-        status,
-        catatan_admin,
-        jadwal_pengambilan,
-      }, {
-        headers: { Authorization: `Bearer ${token}` }, // Use token from AuthContext
+      await axios.put(`${API}/layanan/pengajuan/${id}`, payload, {
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       toast.success("Pengajuan berhasil diperbarui");
       setEditModalOpen(false);
       fetchData();
     } catch (error) {
+      console.error("Error updating status:", error);
       toast.error("Gagal menyimpan perubahan");
     }
   };
 
   const handleViewPdf = (fileUrl) => {
+    // Extract file extension from URL
+    const fileExtension = fileUrl.split('?')[0].split('.').pop().toLowerCase();
+    
     // Check if the file is a PDF
-    if (fileUrl.toLowerCase().includes('.pdf?')) {
+    if (fileExtension === 'pdf') {
       setSelectedPdf(fileUrl);
       setPdfModalOpen(true);
     } else {
@@ -229,6 +246,11 @@ const AdminPelayanan = () => {
       return item.lampiran[0].uploaded_at;
     }
     return null;
+  };
+  
+  // Cek apakah status memerlukan jadwal pengambilan
+  const needsPickupDate = (status) => {
+    return status !== "Diproses" && status !== "Tolak";
   };
 
   return (
@@ -475,16 +497,19 @@ const AdminPelayanan = () => {
                   />
                 </div>
 
-                <div>
-                  <label className="block mb-2 text-sm font-medium text-gray-700">Jadwal Pengambilan</label>
-                  <input
-                    type="datetime-local"
-                    value={selectedItem.jadwal_pengambilan?.slice(0, 16) || ""}
-                    onChange={(e) => setSelectedItem({ ...selectedItem, jadwal_pengambilan: e.target.value })}
-                    min={new Date().toISOString().slice(0, 16)} // Membatasi tanggal dan waktu minimum
-                    className="w-full p-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
+                {/* Jadwal Pengambilan - hanya ditampilkan jika status bukan Diproses atau Tolak */}
+                {needsPickupDate(selectedItem.status) && (
+                  <div>
+                    <label className="block mb-2 text-sm font-medium text-gray-700">Jadwal Pengambilan</label>
+                    <input
+                      type="datetime-local"
+                      value={selectedItem.jadwal_pengambilan?.slice(0, 16) || ""}
+                      onChange={(e) => setSelectedItem({ ...selectedItem, jadwal_pengambilan: e.target.value })}
+                      min={new Date().toISOString().slice(0, 16)} // Membatasi tanggal dan waktu minimum
+                      className="w-full p-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                )}
               </div>
             </div>
 

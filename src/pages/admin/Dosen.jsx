@@ -34,7 +34,7 @@ const AdminDosen = () => {
   const fetchDosen = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`${API}/dosen/all`, {
+      const response = await axios.get(`${API}/dosen/admin/all`, {
         headers: { Authorization: `Bearer ${getToken()}` },
       });
       setDosenList(response.data);
@@ -89,10 +89,10 @@ const AdminDosen = () => {
         const updatedDosenData = response.data.data;
         
         if (updatedDosenData) {
-          // Perbarui data di state dengan data terbaru dari server
+          // Perbarui data di state menggunakan alias bukan id
           setDosenList(prevList => 
             prevList.map(dosen => 
-              dosen.id === editDosen.id ? updatedDosenData : dosen
+              dosen.alias === editDosen.alias ? updatedDosenData : dosen
             )
           );
         } else {
@@ -117,7 +117,7 @@ const AdminDosen = () => {
     try {
       setLoading(true);
       await axios.post(
-        `${API}/dosen`,
+        `${API}/dosen/`,
         newDosen,
         {
           headers: { Authorization: `Bearer ${getToken()}` },

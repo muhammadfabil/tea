@@ -6,6 +6,7 @@ import { FaUserGraduate } from "react-icons/fa";
 import { GrTechnology } from "react-icons/gr";
 import { FaRegNewspaper } from "react-icons/fa6";
 import { CgProfile } from "react-icons/cg";
+import { GiTeacher } from "react-icons/gi";
 
 const MahasiswaLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -57,7 +58,7 @@ const MahasiswaLayout = () => {
             </div>
             <button className="md:hidden text-gray-500 hover:text-gray-700" onClick={toggleSidebar}>
               <X className="w-6 h-6" />
-            </button>
+            </button> 
           </div>
           
           <div className="my-6 border-t border-gray-100"></div>
@@ -128,6 +129,17 @@ const MahasiswaLayout = () => {
               
                 <FaRegNewspaper className="w-5 h-5 mr-3" />
                 <span>News IF</span>
+              </div>
+            </NavLink>
+            <NavLink
+              to="/status-dosen"
+              className={({ isActive }) =>
+                `${navItem} ${isActive ? activeNav : "text-gray-700"}`
+              }
+            >
+              <div className="flex items-center">
+                <GiTeacher className="w-5 h-5 mr-3" />
+                <span>Status Kehadiran Dosen</span>
               </div>
             </NavLink>
             <NavLink

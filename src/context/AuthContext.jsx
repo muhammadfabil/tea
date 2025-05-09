@@ -3,6 +3,7 @@ import { toast } from "react-toastify";
 import axios from "axios";
 
 const AuthContext = createContext();
+export { AuthContext }; // Add explicit export for AuthContext
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export const AuthProvider = ({ children }) => {
@@ -13,17 +14,117 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [sessionWarningTimer, setSessionWarningTimer] = useState(null);
   const [autoRefreshTimer, setAutoRefreshTimer] = useState(null);
+  const [autoLogoutTimer, setAutoLogoutTimer] = useState(null);
 
   useEffect(() => {
-    const stored = localStorage.getItem("auth");
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      setToken(parsed.token);
-      setUser(parsed.user);
-      setIsAuthenticated(true);
-    }
-    setLoading(false);
+    const checkAuth = async () => {
+      const stored = localStorage.getItem("auth");
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          const isValid = await verifyTokenValidity(parsed.token, parsed.refresh_token);
+
+          if (isValid) {
+            setToken(parsed.token);
+            setUser(parsed.user);
+            setIsAuthenticated(true);
+            setupAutoLogout(parsed.token);
+          } else {
+            // Jika token tidak valid, logout sudah dipanggil dalam verifyTokenValidity
+          }
+        } catch (err) {
+          console.error("Invalid token format, logging out", err);
+          logout();
+        }
+      }
+      setLoading(false);
+    };
+
+    checkAuth();
   }, []);
+
+  // Fungsi untuk menyiapkan timer auto logout
+  const setupAutoLogout = (currentToken) => {
+    if (autoLogoutTimer) {
+      clearTimeout(autoLogoutTimer);
+    }
+
+    try {
+      const tokenDecoded = JSON.parse(atob(currentToken.split(".")[1]));
+      const now = Date.now();
+      const exp = tokenDecoded.exp * 1000;
+      const timeUntilExpiry = exp - now;
+
+      if (timeUntilExpiry <= 0) {
+        // Token sudah expired
+        toast.error("Sesi Anda telah berakhir. Silakan login kembali.");
+        logout();
+        return;
+      }
+
+      // Set timer untuk logout otomatis saat token benar-benar expired
+      const logoutTimer = setTimeout(() => {
+        toast.error("Sesi Anda telah berakhir. Silakan login kembali.");
+        logout();
+      }, timeUntilExpiry);
+
+      setAutoLogoutTimer(logoutTimer);
+      console.log(`🔒 Auto logout dijadwalkan dalam ${Math.round(timeUntilExpiry / 1000 / 60)} menit`);
+    } catch (err) {
+      console.error("Error setting up auto logout:", err);
+    }
+  };
+
+  const verifyTokenValidity = async (currentToken, refreshTokenStr) => {
+    if (!currentToken || !refreshTokenStr) {
+      logout();
+      return false;
+    }
+
+    try {
+      // Cek apakah token sudah expired berdasarkan waktu
+      const tokenDecoded = JSON.parse(atob(currentToken.split(".")[1]));
+      const now = Date.now();
+      const exp = tokenDecoded.exp * 1000;
+
+      // Jika token sudah expired, coba refresh
+      if (exp <= now) {
+        console.log("🔒 Token expired, mencoba refresh otomatis...");
+        try {
+          const response = await axios.post(
+            `${BASE_URL}/auth/refresh?token=${refreshTokenStr}`
+          );
+
+          if (response.data?.access_token) {
+            const { access_token, refresh_token } = response.data;
+
+            // Update localStorage dan context
+            const stored = JSON.parse(localStorage.getItem("auth"));
+            const updatedAuth = { ...stored, token: access_token, refresh_token };
+            localStorage.setItem("auth", JSON.stringify(updatedAuth));
+            setToken(access_token);
+
+            // Setup auto logout timer dengan token baru
+            setupAutoLogout(access_token);
+            return true;
+          } else {
+            throw new Error("Refresh token invalid");
+          }
+        } catch (refreshError) {
+          console.error("❌ Token tidak dapat diperbarui, melakukan logout otomatis:", refreshError);
+          toast.error("Sesi Anda telah berakhir. Silakan login kembali.");
+          logout();
+          return false;
+        }
+      }
+
+      return true;
+    } catch (err) {
+      console.error("Token verification failed:", err);
+      logout();
+      return false;
+    }
+  };
 
   const syncTokenToLocalStorage = (newToken) => {
     const stored = JSON.parse(localStorage.getItem("auth")) || {};
@@ -57,6 +158,9 @@ export const AuthProvider = ({ children }) => {
         setSessionWarningTimer(timeoutId);
       }
 
+      // Setup auto logout timer
+      setupAutoLogout(token);
+
       return true;
     } catch (err) {
       console.error("❌ Gagal login:", err);
@@ -80,11 +184,16 @@ export const AuthProvider = ({ children }) => {
       setToken(access_token);
       syncTokenToLocalStorage(access_token);
 
+      // Setup new auto logout timer with fresh token
+      setupAutoLogout(access_token);
+
       console.log("🔄 Token berhasil diperbarui");
       return access_token;
     } catch (err) {
       console.error("❌ Gagal refresh token:", err);
+      toast.error("Sesi Anda telah berakhir. Silakan login kembali.");
       logout();
+      return null;
     }
   };
 
@@ -96,6 +205,7 @@ export const AuthProvider = ({ children }) => {
     setAuthError(null);
     if (sessionWarningTimer) clearTimeout(sessionWarningTimer);
     if (autoRefreshTimer) clearTimeout(autoRefreshTimer);
+    if (autoLogoutTimer) clearTimeout(autoLogoutTimer);
   };
 
   const refreshProfile = async () => {
@@ -111,12 +221,30 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const ensureValidToken = async () => {
+    const stored = localStorage.getItem("auth");
+    if (!stored) {
+      return false;
+    }
+
+    try {
+      const parsed = JSON.parse(stored);
+      return await verifyTokenValidity(parsed.token, parsed.refresh_token);
+    } catch (err) {
+      console.error("Token validation failed:", err);
+      return false;
+    }
+  };
+
   // Axios interceptor untuk refresh token jika 401
   useEffect(() => {
     const axiosInterceptor = axios.interceptors.response.use(
       (response) => response,
       async (error) => {
-        if (error.response?.status === 401) {
+        // Skip token refresh during login/auth operations
+        const isAuthEndpoint = error.config?.url?.includes('/auth/login');
+        
+        if (error.response?.status === 401 && !isAuthEndpoint) {
           console.warn("🔒 Token expired, mencoba refresh...");
           const newToken = await refreshToken();
           if (newToken) {
@@ -160,6 +288,56 @@ export const AuthProvider = ({ children }) => {
     };
   }, [token]);
 
+  // Tambahkan useEffect baru untuk memeriksa token saat pengguna kembali ke tab browser
+  // dan untuk memeriksa token secara periodik
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    
+    // Fungsi untuk memverifikasi token
+    const checkTokenStatus = async () => {
+      const stored = localStorage.getItem("auth");
+      if (!stored) {
+        logout();
+        return;
+      }
+      
+      try {
+        const parsed = JSON.parse(stored);
+        const isValid = await verifyTokenValidity(
+          parsed.token, 
+          parsed.refresh_token
+        );
+        
+        if (!isValid) {
+          // verifyTokenValidity sudah memanggil logout() jika token tidak valid
+          console.log("Token tidak valid, melakukan logout");
+        }
+      } catch (err) {
+        console.error("Error checking token:", err);
+        logout();
+      }
+    };
+    
+    // Jalankan pengecekan ketika window mendapat fokus kembali
+    const handleFocus = () => {
+      console.log("🔍 Window focused, checking token validity");
+      checkTokenStatus();
+    };
+    
+    window.addEventListener('focus', handleFocus);
+    
+    // Jalankan pengecekan secara periodik (setiap 5 menit)
+    const intervalId = setInterval(() => {
+      console.log("🕒 Periodic token check");
+      checkTokenStatus();
+    }, 5 * 60 * 1000); // 5 menit
+    
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      clearInterval(intervalId);
+    };
+  }, [isAuthenticated]); // Tambahkan isAuthenticated sebagai dependency
+
   return (
     <AuthContext.Provider
       value={{
@@ -172,6 +350,7 @@ export const AuthProvider = ({ children }) => {
         refreshProfile,
         loading,
         refreshToken,
+        ensureValidToken,
       }}
     >
       {children}

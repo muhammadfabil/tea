@@ -54,109 +54,111 @@ const KelolaWaktuBimbingan = () => {
 
   const [formData, setFormData] = useState(initialFormData);
 
-  // Fungsi untuk update status antrian secara real-time
-  const updateAntrianStatus = useCallback((data) => {
-    const { inisial, waktu_id, queue } = data;
-    
-    if (!waktu_id || !queue || !queue.length) return;
-    
-    // Update jadwalList
-    setJadwalList(prevList => {
-      const updatedList = [...prevList];
-      const jadwalIndex = updatedList.findIndex(jadwal => jadwal.bimbingan_id === waktu_id);
-      
-      if (jadwalIndex !== -1) {
-        // Create a new array that combines existing antrian dengan any new entries
-        if (updatedList[jadwalIndex].antrian_bimbingan) {
-          // Get existing antrian IDs for comparison
-          const existingAntrianIds = updatedList[jadwalIndex].antrian_bimbingan.map(a => a.id_antrian);
+  const handleUpdateAntrianStatus = async (antrianId) => {
+    setProcessingAntrian(true);
+    setProcessingAntrianId(antrianId);
+
+    try {
+      const endpoint = `${API}/antrian/f/${antrianId}`;
+      const response = await fetch(endpoint, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const responseData = await response.json();
+        
+        // Get the current status of the antrian being processed
+        const currentAntrian = selectedJadwal.antrian_bimbingan.find(a => a.id_antrian === antrianId);
+        const currentStatus = currentAntrian.status_antrian;
+        
+        // Update only the specific antrian that was changed without affecting others
+        if (responseData.updated_antrian) {
+          const updatedAntrian = responseData.updated_antrian;
           
-          // Find new entries that aren't in the existing antrian
-          const newEntries = queue.filter(q => !existingAntrianIds.includes(q.id_antrian))
-            .map(q => ({
-              id_antrian: q.id_antrian,
-              mahasiswa_nim: q.nim,
-              status_antrian: q.status,
-              position: updatedList[jadwalIndex].antrian_bimbingan.length + 1 // Position at the end
-            }));
+          // Update the specific antrian in both jadwalList and selectedJadwal states
+          setJadwalList((prevList) =>
+            prevList.map((jadwal) => {
+              if (jadwal.bimbingan_id === selectedJadwal.bimbingan_id) {
+                return {
+                  ...jadwal,
+                  antrian_bimbingan: jadwal.antrian_bimbingan.map(antrian => 
+                    antrian.id_antrian === antrianId ? 
+                    {
+                      ...antrian,
+                      status_antrian: updatedAntrian.status,
+                    } : antrian
+                  )
+                };
+              }
+              return jadwal;
+            })
+          );
           
-          // Update existing entries
-          const updatedEntries = updatedList[jadwalIndex].antrian_bimbingan.map(antrian => {
-            const queueItem = queue.find(q => q.id_antrian === antrian.id_antrian);
-            if (queueItem) {
-              return {
+          // Also update the selected jadwal to reflect the changes immediately
+          setSelectedJadwal(prev => ({
+            ...prev,
+            antrian_bimbingan: prev.antrian_bimbingan.map(antrian => 
+              antrian.id_antrian === antrianId ? 
+              {
                 ...antrian,
-                status_antrian: queueItem.status,
-                mahasiswa_nim: queueItem.nim
-              };
-            }
-            return antrian;
-          });
-          
-          // Combine updated existing entries with new entries
-          updatedList[jadwalIndex].antrian_bimbingan = [...updatedEntries, ...newEntries];
-        } else {
-          // If no antrian_bimbingan exists yet, create it from queue
-          updatedList[jadwalIndex].antrian_bimbingan = queue.map((q, index) => ({
-            id_antrian: q.id_antrian,
-            mahasiswa_nim: q.nim,
-            status_antrian: q.status,
-            position: index + 1
+                status_antrian: updatedAntrian.status,
+              } : antrian
+            )
           }));
+
+          // Show appropriate toast messages based on the status change
+          if (currentStatus === "Menunggu") {
+            toast.success(`Mahasiswa ${currentAntrian.mahasiswa_nim} sedang dalam bimbingan`);
+          } else if (currentStatus === "Dalam Bimbingan") {
+            toast.success(`Sesi bimbingan dengan mahasiswa ${currentAntrian.mahasiswa_nim} telah selesai`);
+          }
         }
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.message || "Gagal mengubah status antrian");
       }
-      
+    } catch (error) {
+      console.error("Error saat mengubah status antrian:", error);
+      toast.error("Terjadi kesalahan saat mengubah status antrian");
+    } finally {
+      setProcessingAntrian(false);
+      setProcessingAntrianId(null);
+    }
+  };
+
+  // Fungsi untuk memperbarui state berdasarkan data dari WebSocket
+  const updateAntrianStatus = useCallback((data) => {
+    const { waktu_id, queue } = data;
+
+    if (!waktu_id || !queue || !queue.length) return;
+
+    setJadwalList((prevList) => {
+      const updatedList = [...prevList];
+      const jadwalIndex = updatedList.findIndex((jadwal) => jadwal.bimbingan_id === waktu_id);
+
+      if (jadwalIndex !== -1) {
+        updatedList[jadwalIndex].antrian_bimbingan = queue.map((q) => ({
+          id_antrian: q.id_antrian,
+          mahasiswa_nim: q.nim,
+          status_antrian: q.status,
+        }));
+      }
+
       return updatedList;
     });
-    
-    // Update selectedJadwal if currently viewing details
+
     if (selectedJadwal && selectedJadwal.bimbingan_id === waktu_id) {
-      setSelectedJadwal(prevJadwal => {
-        if (!prevJadwal) return prevJadwal;
-        
-        // Similar logic for selectedJadwal
-        let updatedAntrian;
-        
-        if (prevJadwal.antrian_bimbingan && prevJadwal.antrian_bimbingan.length > 0) {
-          // Get existing antrian IDs
-          const existingAntrianIds = prevJadwal.antrian_bimbingan.map(a => a.id_antrian);
-          
-          // Find new entries
-          const newEntries = queue.filter(q => !existingAntrianIds.includes(q.id_antrian))
-            .map(q => ({
-              id_antrian: q.id_antrian,
-              mahasiswa_nim: q.nim,
-              status_antrian: q.status,
-              position: prevJadwal.antrian_bimbingan.length + 1 // Position at the end
-            }));
-          
-          // Update existing entries
-          const updatedEntries = prevJadwal.antrian_bimbingan.map(antrian => {
-            const queueItem = queue.find(q => q.id_antrian === antrian.id_antrian);
-            if (queueItem) {
-              return {
-                ...antrian,
-                status_antrian: queueItem.status,
-                mahasiswa_nim: queueItem.nim
-              };
-            }
-            return antrian;
-          });
-          
-          // Combine
-          updatedAntrian = [...updatedEntries, ...newEntries];
-        } else {
-          // If no antrian yet, create from queue
-          updatedAntrian = queue.map((q, index) => ({
-            id_antrian: q.id_antrian,
-            mahasiswa_nim: q.nim,
-            status_antrian: q.status,
-            position: index + 1
-          }));
-        }
-        
-        return { ...prevJadwal, antrian_bimbingan: updatedAntrian };
-      });
+      setSelectedJadwal((prevJadwal) => ({
+        ...prevJadwal,
+        antrian_bimbingan: queue.map((q) => ({
+          id_antrian: q.id_antrian,
+          mahasiswa_nim: q.nim,
+          status_antrian: q.status,
+        })),
+      }));
     }
   }, [selectedJadwal]);
 
@@ -181,7 +183,8 @@ const KelolaWaktuBimbingan = () => {
     socketRef.current.addEventListener("message", (event) => {
       try {
         const data = JSON.parse(event.data);
-        // Handle WebSocket messages
+        console.log("WebSocket message received:", data);
+        
         switch (data.event) {
           case "update_antrian":
             updateAntrianStatus(data);
@@ -215,13 +218,13 @@ const KelolaWaktuBimbingan = () => {
         socketRef.current = null;
       }
     };
-  }, [token]); // Perbarui WebSocket setiap kali token berubah
+  }, [token]);
 
   const fetchJadwalBimbingan = async () => {
     try {
       const response = await fetch(`${API}/waktu_bimbingan/dosen/${user?.profile?.alias}`, {
         headers: {
-          Authorization: `Bearer ${token}`, // Gunakan token dari AuthContext
+          Authorization: `Bearer ${token}`,
         },
       });
 
@@ -240,7 +243,7 @@ const KelolaWaktuBimbingan = () => {
 
   useEffect(() => {
     fetchJadwalBimbingan();
-  }, [user, token]); // Refetch jadwal jika token berubah
+  }, [user, token]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -258,7 +261,6 @@ const KelolaWaktuBimbingan = () => {
     const now = new Date();
     const selectedDateTime = new Date(`${formData.tanggal}T${formData.waktu_mulai}`);
 
-    // Validasi tanggal dan waktu
     if (selectedDateTime < now) {
       toast.error("Jadwal tidak boleh di masa lalu");
       setLoading(false);
@@ -289,9 +291,9 @@ const KelolaWaktuBimbingan = () => {
       if (response.ok) {
         setMessage("Jadwal bimbingan berhasil ditambahkan!");
         setJadwalList([...jadwalList, result]);
-        setFormData(initialFormData); // Reset form
+        setFormData(initialFormData);
         toast.success("Jadwal bimbingan berhasil ditambahkan!");
-        setIsModalOpen(false); // Close modal
+        setIsModalOpen(false);
       } else {
         setMessage(`Error: ${result.detail || "Terjadi kesalahan saat menyimpan."}`);
         toast.error(result.detail || "Terjadi kesalahan saat menyimpan.");
@@ -320,7 +322,6 @@ const KelolaWaktuBimbingan = () => {
 
       if (response.ok) {
         const result = await response.json();
-        // Update jadwalList dengan jadwal yang diperbarui
         const updatedList = jadwalList.map(jadwal => 
           jadwal.bimbingan_id === selectedJadwal.bimbingan_id ? result : jadwal
         );
@@ -354,7 +355,6 @@ const KelolaWaktuBimbingan = () => {
       });
 
       if (response.ok) {
-        // Hapus jadwal dari daftar
         const updatedList = jadwalList.filter(
           jadwal => jadwal.bimbingan_id !== selectedJadwal.bimbingan_id
         );
@@ -371,48 +371,6 @@ const KelolaWaktuBimbingan = () => {
       toast.error("Terjadi kesalahan saat menghapus jadwal");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleUpdateAntrianStatus = async (antrianId, statusAction) => {
-    setProcessingAntrian(true);
-    setProcessingAntrianId(antrianId);
-    
-    try {
-      // Tetap gunakan endpoint yang sama
-      const endpoint = `${API}/antrian/f/${antrianId}`;
-      
-      const response = await fetch(endpoint, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        // Toast pesan sesuai aksi
-        if (statusAction === "p") {
-          toast.success("Status berhasil diubah menjadi Dalam Bimbingan");
-        } else if (statusAction === "f") {
-          toast.success("Status berhasil diubah menjadi Selesai");
-        }
-        
-        // Beri sedikit waktu sebelum memperbarui UI lagi (opsional)
-        setTimeout(() => {
-          if (user?.profile?.alias) {
-            fetchJadwalBimbingan();
-          }
-        }, 500);
-      } else {
-        const errorData = await response.json();
-        toast.error(errorData.message || "Gagal mengubah status antrian");
-      }
-    } catch (error) {
-      console.error("Error saat mengubah status antrian:", error);
-      toast.error("Terjadi kesalahan saat mengubah status antrian");
-    } finally {
-      setProcessingAntrian(false);
-      setProcessingAntrianId(null);
     }
   };
 
@@ -447,27 +405,22 @@ const KelolaWaktuBimbingan = () => {
     return new Date(dateString).toLocaleDateString('id-ID', options);
   };
 
-  // Preview file function
   const handlePreviewFile = (fileUrl, fileName) => {
     setPreviewFile({ url: fileUrl, name: fileName });
   };
 
-  // Close preview file
   const handleClosePreview = () => {
     setPreviewFile(null);
     setIsPreviewFullscreen(false);
   };
 
-  // Toggle fullscreen preview
   const toggleFullscreenPreview = () => {
     setIsPreviewFullscreen(!isPreviewFullscreen);
   };
 
-  // Detect file type and return appropriate iframe
   const renderFilePreview = (fileUrl, fileName) => {
     const fileExtension = fileName.split('.').pop().toLowerCase();
     
-    // PDF files
     if (fileExtension === 'pdf') {
       return (
         <iframe 
@@ -478,7 +431,6 @@ const KelolaWaktuBimbingan = () => {
       );
     }
     
-    // Microsoft Office documents (needs Google Docs Viewer or similar)
     if (['doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'].includes(fileExtension)) {
       return (
         <iframe 
@@ -489,7 +441,6 @@ const KelolaWaktuBimbingan = () => {
       );
     }
     
-    // Images
     if (['png', 'jpg', 'jpeg', 'gif', 'webp'].includes(fileExtension)) {
       return (
         <img 
@@ -500,7 +451,6 @@ const KelolaWaktuBimbingan = () => {
       );
     }
     
-    // Default - can't preview, show download button
     return (
       <div className="flex flex-col items-center justify-center h-full">
         <FileText size={64} className="text-gray-400 mb-4" />
@@ -523,7 +473,6 @@ const KelolaWaktuBimbingan = () => {
     );
   };
 
-  // Render status badge dengan warna yang sesuai
   const renderStatusBadge = (status) => {
     let bgColor, textColor, icon;
     
@@ -554,17 +503,14 @@ const KelolaWaktuBimbingan = () => {
     );
   };
 
-  // This will handle real-time notification when a student joins a queue
   const handleStudentJoinedQueue = useCallback((data) => {
     const { waktu_id, queue } = data;
     
     if (!waktu_id || !queue || !queue.length) return;
     
-    // Find the latest joined student (if any)
     const newStudent = queue.find(q => q.status === "Menunggu");
     
     if (newStudent) {
-      // Display a toast notification with student information
       toast.info(
         <div>
           <strong>Mahasiswa baru di antrian!</strong>
@@ -603,7 +549,6 @@ const KelolaWaktuBimbingan = () => {
         </div>
       </div>
 
-      {/* Jadwal Bimbingan */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {jadwalList.length > 0 ? (
           jadwalList.map((jadwal, index) => (
@@ -706,11 +651,9 @@ const KelolaWaktuBimbingan = () => {
         )}
       </div>
 
-      {/* Modal Detail Jadwal */}
       {isDetailModalOpen && selectedJadwal && (
         <div className="fixed inset-0 bg-none bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl p-6 relative animate-fadeIn overflow-y-auto max-h-[90vh]">
-            {/* Header Modal */}
             <div className="flex justify-between items-center pb-4 border-b border-gray-200 mb-6">
               <div>
                 <h2 className="text-2xl font-bold text-gray-800">
@@ -726,7 +669,6 @@ const KelolaWaktuBimbingan = () => {
               </button>
             </div>
 
-            {/* Informasi Jadwal */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
               <div className="space-y-4">
                 <div>
@@ -799,7 +741,6 @@ const KelolaWaktuBimbingan = () => {
               </div>
             </div>
 
-            {/* Daftar Mahasiswa */}
             <div className="border-t border-gray-200 pt-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-xl font-semibold flex items-center">
@@ -837,7 +778,7 @@ const KelolaWaktuBimbingan = () => {
                     <tbody className="bg-white divide-y divide-gray-200">
                       {selectedJadwal.antrian_bimbingan.map((antrian, index) => (
                         <tr key={antrian.id_antrian} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{antrian.position}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{antrian.position || index + 1}</td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{antrian.mahasiswa_nim}</td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             {renderStatusBadge(antrian.status_antrian)}
@@ -924,7 +865,6 @@ const KelolaWaktuBimbingan = () => {
               )}
             </div>
 
-            {/* Tombol Aksi */}
             <div className="flex justify-end mt-8 pt-6 border-t border-gray-200">
               <div className="flex gap-3">
                 <button
@@ -949,7 +889,6 @@ const KelolaWaktuBimbingan = () => {
         </div>
       )}
 
-      {/* Modal Tambah/Edit Jadwal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-none bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 relative animate-fadeIn">
@@ -976,7 +915,7 @@ const KelolaWaktuBimbingan = () => {
                     name="tanggal"
                     value={formData.tanggal}
                     onChange={handleChange}
-                    min={new Date().toISOString().split("T")[0]} // Membatasi tanggal minimum ke hari ini
+                    min={new Date().toISOString().split("T")[0]}
                     className="pl-10 w-full border border-gray-300 rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     required
                   />
@@ -995,7 +934,7 @@ const KelolaWaktuBimbingan = () => {
                       name="waktu_mulai"
                       value={formData.waktu_mulai}
                       onChange={handleChange}
-                      min={formData.tanggal === new Date().toISOString().split("T")[0] ? new Date().toISOString().slice(11, 16) : undefined} // Membatasi waktu minimum jika tanggal adalah hari ini
+                      min={formData.tanggal === new Date().toISOString().split("T")[0] ? new Date().toISOString().slice(11, 16) : undefined}
                       className="pl-10 w-full border border-gray-300 rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       required
                     />
@@ -1113,11 +1052,9 @@ const KelolaWaktuBimbingan = () => {
         </div>
       )}
 
-      {/* Modal Preview File */}
       {previewFile && (
         <div className={`fixed inset-0 bg-none backdrop-blur-sm bg-opacity-75 flex items-center justify-center z-[60] ${isPreviewFullscreen ? 'p-0' : 'p-8'}`}>
           <div className={`bg-white rounded-lg shadow-2xl relative animate-fadeIn ${isPreviewFullscreen ? 'w-full h-full rounded-none' : 'w-full max-w-5xl max-h-[90vh]'}`}>
-            {/* Header */}
             <div className="flex justify-between items-center p-4 border-b border-gray-200">
               <h3 className="text-xl font-semibold text-gray-800 truncate max-w-[80%]">
                 <FileText className="inline mr-2 text-blue-600" size={20} />
@@ -1151,7 +1088,6 @@ const KelolaWaktuBimbingan = () => {
               </div>
             </div>
             
-            {/* Content */}
             <div className={`${isPreviewFullscreen ? 'h-[calc(100%-64px)]' : 'h-[70vh]'} overflow-auto bg-gray-100`}>
               {renderFilePreview(previewFile.url, previewFile.name)}
             </div>

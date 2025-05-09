@@ -8,6 +8,7 @@ import Login from "../pages/common/Login";
 import NotFound from "../pages/common/NotFound";
 import LandingPage from "../pages/common/LandingPage";
 import AntreanDosen from "../pages/common/AntreanDosen";
+import DosenStatus from "../pages/common/DosenStatus";
 
 // Layout Mahasiswa
 import MahasiswaLayout from "../layouts/MahasiswaLayout";
@@ -58,6 +59,7 @@ const AppRouter = () => {
   <Route path="/status-dosen" element={<AntreanDosen />} />
   <Route path="/reset-pass" element={<ResetPassRequest />} />  {/* Fixed the element syntax */}
   <Route path="/reset-password" element={<ResetPassPage />} />  {/* Fixed the element syntax */}
+  <Route path="/dosen-status" element={<DosenStatus />} />  {/* Fixed the element syntax */}
  
 
   {/* 🎓 Rute Mahasiswa (Hanya untuk mahasiswa) */}

@@ -1,8 +1,9 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { FiEye, FiEyeOff } from "react-icons/fi";
+import { FaArrowLeft } from "react-icons/fa";
 
 const RegisterMahasiswa = () => {
   const [nim, setNim] = useState("");
@@ -96,6 +97,17 @@ const RegisterMahasiswa = () => {
 
         {/* Right side - Registration Form */}
         <div className="w-full md:w-1/2 bg-white p-10">
+          {/* Back to landing page link at the top of the form - same style as login page */}
+          <div className="mb-6">
+            <Link 
+              to="/"
+              className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 transition-colors"
+            >
+              <FaArrowLeft className="text-sm" />
+              <span className="text-sm font-medium">Kembali ke Beranda</span>
+            </Link>
+          </div>
+
           <div className="md:hidden text-center mb-8">
             <h2 className="text-3xl font-bold text-blue-600">SIMANTAP</h2>
             <p className="text-gray-500 text-sm">Sistem Manajemen Layanan Administrasi dan Antrean Program Studi</p>
