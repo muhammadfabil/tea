@@ -21,7 +21,7 @@ import {
   ExternalLink
 } from "lucide-react";
 import "react-toastify/dist/ReactToastify.css";
-
+  
 const ROLE_MAPPING = {
   wali: ["Dosen Wali", 1],
   kp: ["Dosen KP", 1],
@@ -69,6 +69,9 @@ const IsiDataDosen = () => {
   useEffect(() => {
     fetchDosen();
     fetchRelations();
+    return () => {
+    toast.dismiss();
+  };
   }, []);
 
   const fetchDosen = async () => {

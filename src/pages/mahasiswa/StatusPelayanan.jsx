@@ -178,6 +178,12 @@ const StatusPelayanan = () => {
     fetchPengajuanData();
   }, [token]); // Added token to dependency array
 
+  useEffect(() => {
+  return () => {
+    toast.dismiss(); // Clear all toasts when the component unmounts
+  };
+}, []);
+
   // Close modal when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {

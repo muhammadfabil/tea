@@ -86,7 +86,6 @@ const JadwalBimbinganMahasiswa = () => {
   // Setup WebSocket connection - FIXED
   useEffect(() => {
     if (!nimMahasiswa || !token) return;
-
     // Tutup koneksi WebSocket lama jika ada
     if (socketRef.current) {
       socketRef.current.close();
@@ -268,6 +267,10 @@ const JadwalBimbinganMahasiswa = () => {
     };
 
     fetchData();
+
+    return () => {
+      toast.dismiss();
+    };
   }, [token]); // Add token to dependency array to refetch when token changes
 
   const formatDate = (dateString) => {

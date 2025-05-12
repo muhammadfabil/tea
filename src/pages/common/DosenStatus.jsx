@@ -18,18 +18,26 @@ const DosenStatus = () => {
 
   // Auto-switch halaman setiap 15 detik
   useEffect(() => {
-    if (dosenList.length > CARDS_PER_PAGE) {
+    // Count lecturers who are present
+    const presentDosenCount = dosenList.filter(dosen => dosen.status_kehadiran).length;
+    
+    // Only auto-switch if more than CARDS_PER_PAGE lecturers are present
+    if (presentDosenCount > CARDS_PER_PAGE) {
       autoSwitchRef.current = setInterval(() => {
         setCurrentPage(prev => 
           (prev + 1) % Math.ceil(dosenList.length / CARDS_PER_PAGE)
         );
       }, 15000);
+    } else if (autoSwitchRef.current) {
+      // Clear interval if condition is no longer met
+      clearInterval(autoSwitchRef.current);
+      autoSwitchRef.current = null;
     }
     
     return () => {
       if (autoSwitchRef.current) clearInterval(autoSwitchRef.current);
     };
-  }, [dosenList.length]);
+  }, [dosenList]);
 
   useEffect(() => {
     // Fetch initial data

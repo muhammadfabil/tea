@@ -15,6 +15,7 @@ const AdminMahasiswa = () => {
 
   useEffect(() => {
     fetchMahasiswa();
+    
   }, []);
 
   const getAuthToken = () => {

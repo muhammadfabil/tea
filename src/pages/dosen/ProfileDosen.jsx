@@ -83,7 +83,13 @@ const ProfileDosen = () => {
     };
 
     fetchProfileData();
-  }, [alias]);
+  }, [alias, API]);
+
+  useEffect(() => {
+    return () => {
+      toast.dismiss(); // Clear all toasts when the component unmounts
+    };
+  }, [API]);
 
   // Handle input changes
   const handleChange = (e) => {
@@ -179,13 +185,9 @@ const ProfileDosen = () => {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[70vh]">
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
-          className="text-blue-500 mb-4"
-        >
+        <div className="text-blue-500 mb-4">
           <FiLoader size={40} />
-        </motion.div>
+        </div>
         <p className="text-gray-600 font-medium">Memuat data profil...</p>
       </div>
     );

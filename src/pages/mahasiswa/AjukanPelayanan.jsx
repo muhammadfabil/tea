@@ -146,6 +146,13 @@ const AjukanPelayanan = () => {
       .catch(() => toast.error("Gagal mengambil data layanan."));
   }, []);
 
+  useEffect(() => {
+  // Cleanup function to dismiss all toasts when the component unmounts
+  return () => {
+    toast.dismiss();
+  };
+}, []);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!selectedLayanan || !berkas) {

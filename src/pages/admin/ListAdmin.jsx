@@ -39,6 +39,9 @@ const KelolaAdmin = () => {
 
   useEffect(() => {
     fetchAdmin();
+    return () => {
+    toast.dismiss();
+  };
   }, []);
 
   const handleInputChange = (e) => {

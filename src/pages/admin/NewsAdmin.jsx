@@ -54,6 +54,9 @@ const NewsAdmin = () => {
   // Load news on component mount
   useEffect(() => {
     fetchNews();
+    return () => {
+    toast.dismiss();
+  };
   }, []);
 
   // Fetch news from API

@@ -52,8 +52,13 @@ const KelolaLayanan = () => {
   };
 
   useEffect(() => {
-    fetchLayanan();
-  }, []);
+  fetchLayanan();
+
+  // Cleanup function to dismiss all toasts when the component unmounts
+  return () => {
+    toast.dismiss();
+  };
+}, []);
 
   const onDrop = useCallback((acceptedFiles) => {
     if (acceptedFiles.length > 0) {

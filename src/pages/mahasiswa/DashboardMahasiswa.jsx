@@ -234,8 +234,13 @@ const DashboardMahasiswa = () => {
 
   useEffect(() => {
     fetchDashboardData();
+
+    toast.dismiss();
     // Auto-subscribe to notifications when component mounts
     autoSubscribeToPushNotifications();
+    return () => {
+    toast.dismiss();
+  };
   }, []);
 
   // Format tanggal untuk tampilan

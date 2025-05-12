@@ -144,8 +144,13 @@ const AdminPelayanan = () => {
   }, [token]); // Reconnect WebSocket setiap kali token berubah
 
   useEffect(() => {
-    fetchData();
-  }, [token]); // Refetch data when token changes
+  fetchData();
+
+  // Cleanup function to dismiss all toasts when the component unmounts
+  return () => {
+    toast.dismiss();
+  };
+}, [token]); // Refetch data when token changes
 
   const handleEdit = (item) => {
     setSelectedItem(item);

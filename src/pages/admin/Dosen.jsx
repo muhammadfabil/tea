@@ -228,9 +228,14 @@ const AdminDosen = () => {
     }
   };
 
-  useEffect(() => {
-    fetchDosen();
-  }, []);
+ useEffect(() => {
+  fetchDosen();
+
+  // Cleanup function to dismiss all toasts when the component unmounts
+  return () => {
+    toast.dismiss();
+  };
+}, []);
 
   const filteredDosen = dosenList.filter(dosen => 
     dosen.name.toLowerCase().includes(searchTerm.toLowerCase()) ||

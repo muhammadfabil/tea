@@ -243,6 +243,9 @@ const KelolaWaktuBimbingan = () => {
 
   useEffect(() => {
     fetchJadwalBimbingan();
+    return () => {
+    toast.dismiss();
+  };
   }, [user, token]);
 
   const handleChange = (e) => {
