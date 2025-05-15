@@ -11,7 +11,7 @@ export default defineConfig({
       strategies: 'injectManifest',
       srcDir: 'src',
       filename: 'sw.js',
-      injectRegister: 'auto',
+      injectRegister: 'script',
       registerType: 'autoUpdate',
       includeAssets: ['logo.png', 'robots.txt'],
       manifest: {
@@ -22,45 +22,81 @@ export default defineConfig({
         background_color: '#ffffff',
         display: 'standalone',
         start_url: '/',
+        orientation: 'any',
+        scope: '/',
         icons: [
           {
-            src: 'logo.png', // Gunakan satu file logo
-            sizes: '192x192', // Ukuran untuk ikon kecil
+            src: 'logo.png',
+            sizes: '192x192',
             type: 'image/png',
           },
           {
-            src: 'logo.png', // File yang sama
-            sizes: '512x512', // Ukuran untuk ikon besar
+            src: 'logo.png',
+            sizes: '512x512',
             type: 'image/png',
           },
           {
-            src: 'logo.png', // File yang sama
-            // Ukuran besar untuk maskable icon
-                  type: 'image/png',
-                  purpose: 'any maskable',
-                  },
-                ],
-                },
-                devOptions: {
-                enabled: true,
-                type: 'module',
-                navigateFallback: 'index.html',
-                suppressWarnings: true,
-                },
-                workbox: {
-                runtimeCaching: [
-                  {
-                  urlPattern: /^http:\/\/127\.0\.0\.1:8000\/.*$/, // Sesuaikan dengan domain API Anda
-            handler: 'NetworkOnly', // Jangan cache API
+            src: 'logo.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any maskable',
           },
         ],
+        categories: ['education', 'productivity'],
+        shortcuts: [
+          {
+            name: 'Dashboard',
+            url: '/mahasiswa/dashboard',
+            description: 'Lihat Dashboard'
+          }
+        ],
+      },
+      devOptions: {
+        enabled: true,
+        type: 'module',
+        navigateFallback: 'index.html',
+        suppressWarnings: true,
+      },
+      workbox: {
+        skipWaiting: true,
+        clientsClaim: true,
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/simantap-api\.ifsyscenter\.my\.id\/wp\/push\/.*$/,
+            handler: 'NetworkOnly',
+          },
+          {
+            urlPattern: /^https:\/\/simantap-api\.ifsyscenter\.my\.id\/.*$/,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'api-cache',
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 300,
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+          {
+            urlPattern: /^http:\/\/127\.0\.0\.1:8000\/.*$/,
+            handler: 'NetworkOnly',
+          },
+        ],
+        debug: true,
       },
     }),
   ],
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: './vitest.setup.js',
+  },
   server: {
     proxy: {
       '/api': {
-        target: 'https://simantap-api.ifsyscenter.my.id', // Sesuaikan dengan URL API Anda
+        target: 'https://simantap-api.ifsyscenter.my.id',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
       },

@@ -1,23 +1,36 @@
 import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import { format } from "date-fns";
-import { Eye, Pencil, X, FileText, Calendar, User, Tag, Clock, Download, Wifi, WifiOff } from "lucide-react";
 import { toast } from "react-toastify";
-import { useAuth } from "../../context/AuthContext"; // Import useAuth
+import { useAuth } from "../../context/AuthContext";
+import { 
+  FiEye, FiEdit2, FiX, FiFileText, FiCalendar, FiUser, 
+  FiTag, FiClock, FiDownload, FiWifi, FiWifiOff, FiFilter,
+  FiCheck, FiAlertCircle, FiClock as FiClockCircle, FiRefreshCw,
+  FiCheckCircle, FiXCircle, FiInbox, FiChevronLeft, FiChevronRight,
+  FiSearch, FiList, FiArchive
+} from "react-icons/fi";
 
 const STATUS_OPTIONS = ["Menunggu", "Diproses", "Selesai", "Tolak"];
 
 const STATUS_COLORS = {
-  Menunggu: "bg-yellow-100 text-yellow-800",
-  Diproses: "bg-blue-100 text-blue-800",
-  Selesai: "bg-green-100 text-green-800",
-  Tolak: "bg-red-100 text-red-800",
+  Menunggu: "bg-yellow-100 text-yellow-800 border-yellow-200",
+  Diproses: "bg-blue-100 text-blue-800 border-blue-200",
+  Selesai: "bg-green-100 text-green-800 border-green-200",
+  Tolak: "bg-red-100 text-red-800 border-red-200",
+};
+
+const STATUS_ICONS = {
+  Menunggu: <FiClockCircle className="mr-1" />,
+  Diproses: <FiRefreshCw className="mr-1" />,
+  Selesai: <FiCheckCircle className="mr-1" />,
+  Tolak: <FiXCircle className="mr-1" />,
 };
 
 const API = import.meta.env.VITE_API_BASE_URL;
 
 const AdminPelayanan = () => {
-  const { token } = useAuth(); // Use token from AuthContext
+  const { token } = useAuth();
   const [data, setData] = useState([]);
   const [jenisLayananMap, setJenisLayananMap] = useState({});
   const [selectedItem, setSelectedItem] = useState(null);
@@ -27,13 +40,18 @@ const AdminPelayanan = () => {
   const [selectedPdf, setSelectedPdf] = useState(null);
   const [pdfModalOpen, setPdfModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [socketConnected, setSocketConnected] = useState(false); // WebSocket connection status
-  const socketRef = useRef(null); // WebSocket reference
+  const [socketConnected, setSocketConnected] = useState(false);
+  const socketRef = useRef(null);
+  const [activeFilter, setActiveFilter] = useState("aktif");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [viewMode, setViewMode] = useState("aktif"); // "aktif" or "histori"
+  const itemsPerPage = 20;
 
   const fetchMahasiswaName = async (nim) => {
     try {
       const response = await axios.get(`${API}/mahasiswa/${nim}`, {
-        headers: { Authorization: `Bearer ${token}` }, // Use token from AuthContext
+        headers: { Authorization: `Bearer ${token}` },
       });
       return response.data.nama;
     } catch (error) {
@@ -47,10 +65,10 @@ const AdminPelayanan = () => {
     try {
       const [pengajuanRes, jenisRes] = await Promise.all([
         axios.get(`${API}/layanan/pengajuan/all`, {
-          headers: { Authorization: `Bearer ${token}` }, // Use token from AuthContext
+          headers: { Authorization: `Bearer ${token}` },
         }),
         axios.get(`${API}/layanan/jenis`, {
-          headers: { Authorization: `Bearer ${token}` }, // Use token from AuthContext
+          headers: { Authorization: `Bearer ${token}` },
         }),
       ]);
 
@@ -64,7 +82,6 @@ const AdminPelayanan = () => {
       const pengajuanData = pengajuanRes.data;
       setData(pengajuanData);
       
-      // Fetch names for all unique NIMs
       const uniqueNims = [...new Set(pengajuanData.map(item => item.mahasiswa_nim))];
       const namesMap = {};
       
@@ -88,13 +105,11 @@ const AdminPelayanan = () => {
   useEffect(() => {
     if (!token) return;
 
-    // Tutup koneksi WebSocket lama jika ada
     if (socketRef.current) {
       socketRef.current.close();
       socketRef.current = null;
     }
 
-    // Inisialisasi koneksi WebSocket baru dengan token yang diperbarui
     socketRef.current = new WebSocket(`${API.replace(/^https?/, 'wss')}/ws?token=${token}`);
 
     socketRef.current.onopen = () => {
@@ -107,7 +122,6 @@ const AdminPelayanan = () => {
         const data = JSON.parse(event.data);
 
         if (data.event === "new_pengajuan") {
-          // Fetch the latest data when a new pengajuan is received
           toast.info("Pengajuan baru diterima");
           await fetchData();
         }
@@ -120,7 +134,6 @@ const AdminPelayanan = () => {
       console.log("❌ WebSocket disconnected");
       setSocketConnected(false);
 
-      // Coba sambungkan kembali setelah 5 detik jika koneksi terputus
       setTimeout(() => {
         if (socketRef.current?.readyState === WebSocket.CLOSED) {
           console.log("🔄 Attempting to reconnect WebSocket...");
@@ -134,23 +147,21 @@ const AdminPelayanan = () => {
       setSocketConnected(false);
     };
 
-    // Cleanup saat komponen di-unmount
     return () => {
       if (socketRef.current) {
         socketRef.current.close();
         socketRef.current = null;
       }
     };
-  }, [token]); // Reconnect WebSocket setiap kali token berubah
+  }, [token]);
 
   useEffect(() => {
-  fetchData();
+    fetchData();
 
-  // Cleanup function to dismiss all toasts when the component unmounts
-  return () => {
-    toast.dismiss();
-  };
-}, [token]); // Refetch data when token changes
+    return () => {
+      toast.dismiss();
+    };
+  }, [token]);
 
   const handleEdit = (item) => {
     setSelectedItem(item);
@@ -208,15 +219,12 @@ const AdminPelayanan = () => {
   };
 
   const handleViewPdf = (fileUrl) => {
-    // Extract file extension from URL
     const fileExtension = fileUrl.split('?')[0].split('.').pop().toLowerCase();
     
-    // Check if the file is a PDF
     if (fileExtension === 'pdf') {
       setSelectedPdf(fileUrl);
       setPdfModalOpen(true);
     } else {
-      // If not a PDF, just open it in a new tab
       window.open(fileUrl, '_blank');
     }
   };
@@ -225,13 +233,13 @@ const AdminPelayanan = () => {
     const extension = fileName.split('.').pop().toLowerCase();
     
     if (extension === 'pdf') {
-      return <FileText size={18} className="text-red-500" />;
+      return <FiFileText className="text-red-500" />;
     } else if (['doc', 'docx'].includes(extension)) {
-      return <FileText size={18} className="text-blue-500" />;
+      return <FiFileText className="text-blue-500" />;
     } else if (['xls', 'xlsx'].includes(extension)) {
-      return <FileText size={18} className="text-green-500" />;
+      return <FiFileText className="text-green-500" />;
     } else {
-      return <FileText size={18} className="text-gray-500" />;
+      return <FiFileText className="text-gray-500" />;
     }
   };
 
@@ -245,7 +253,6 @@ const AdminPelayanan = () => {
     }
   };
 
-  // Get the submission date from the first document in the lampiran array
   const getSubmissionDate = (item) => {
     if (item.lampiran && item.lampiran.length > 0 && item.lampiran[0].uploaded_at) {
       return item.lampiran[0].uploaded_at;
@@ -253,9 +260,76 @@ const AdminPelayanan = () => {
     return null;
   };
   
-  // Cek apakah status memerlukan jadwal pengambilan
   const needsPickupDate = (status) => {
     return status !== "Diproses" && status !== "Tolak";
+  };
+
+  // Separate active items from history (completed/rejected)
+  const activeItems = data.filter(item => item.status === "Menunggu" || item.status === "Diproses");
+  const historyItems = data.filter(item => item.status === "Selesai" || item.status === "Tolak");
+
+  // Filter data based on view mode, selected filter and search term
+  const filteredData = (viewMode === "aktif" ? activeItems : historyItems).filter(item => {
+    const matchesFilter = 
+      activeFilter === "aktif" || 
+      activeFilter === "histori" || 
+      activeFilter === item.status.toLowerCase();
+    
+    const mahasiswaName = mahasiswaNames[item.mahasiswa_nim]?.toLowerCase() || "";
+    const layananName = jenisLayananMap[item.jenis_layanan_id]?.toLowerCase() || "";
+    const nim = item.mahasiswa_nim?.toLowerCase() || "";
+    
+    const matchesSearch = 
+      searchTerm === "" || 
+      mahasiswaName.includes(searchTerm.toLowerCase()) ||
+      layananName.includes(searchTerm.toLowerCase()) ||
+      nim.includes(searchTerm.toLowerCase());
+    
+    return matchesFilter && matchesSearch;
+  });
+
+  // Sort data differently based on view mode
+  const sortedData = [...filteredData].sort((a, b) => {
+    if (viewMode === "aktif") {
+      // Priority by status for active items
+      if (a.status === "Menunggu" && b.status !== "Menunggu") return -1;
+      if (a.status !== "Menunggu" && b.status === "Menunggu") return 1;
+    }
+    
+    // Then by date (newest first)
+    const dateA = getSubmissionDate(a) ? new Date(getSubmissionDate(a)) : new Date(0);
+    const dateB = getSubmissionDate(b) ? new Date(getSubmissionDate(b)) : new Date(0);
+    return dateB - dateA;
+  });
+
+  // Pagination
+  const totalPages = Math.ceil(sortedData.length / itemsPerPage);
+  const paginatedData = sortedData.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  // Reset to page 1 when filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeFilter, searchTerm, viewMode]);
+
+  const countByStatus = {
+    menunggu: data.filter(item => item.status === "Menunggu").length,
+    diproses: data.filter(item => item.status === "Diproses").length,
+    selesai: data.filter(item => item.status === "Selesai").length,
+    tolak: data.filter(item => item.status === "Tolak").length,
+    aktif: activeItems.length,
+    histori: historyItems.length
+  };
+
+  // Get indicator color based on submission recency (within 24 hours)
+  const getRecentIndicator = (timestamp) => {
+    if (!timestamp) return false;
+    const submissionDate = new Date(timestamp);
+    const now = new Date();
+    const hoursAgo = (now - submissionDate) / (1000 * 60 * 60);
+    return hoursAgo < 24;
   };
 
   return (
@@ -265,58 +339,346 @@ const AdminPelayanan = () => {
         <div className={`flex items-center ${socketConnected ? "text-green-600" : "text-gray-400"}`}>
           {socketConnected ? (
             <>
-              <Wifi size={16} className="mr-1" />
+              <FiWifi size={16} className="mr-1" />
               <span className="text-xs">Realtime aktif</span>
             </>
           ) : (
             <>
-              <WifiOff size={16} className="mr-1" />
+              <FiWifiOff size={16} className="mr-1" />
               <span className="text-xs">Menghubungkan...</span>
             </>
           )}
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-md overflow-hidden">
-        <table className="w-full table-auto">
-          <thead className="bg-gray-100">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">NIM</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Mahasiswa</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Layanan</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Status</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Aksi</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {data.map((item) => (
-              <tr key={item.id} className="hover:bg-gray-50 transition-colors">
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.mahasiswa_nim}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                  {mahasiswaNames[item.mahasiswa_nim] || "Loading..."}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{jenisLayananMap[item.jenis_layanan_id]}</td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[item.status]}`}>
-                    {item.status}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                  <button 
-                    onClick={() => handleViewDetail(item)} 
-                    className="flex items-center text-indigo-600 hover:text-indigo-900 transition-colors"
-                  >
-                    <Eye size={16} className="mr-1" />
-                    Detail
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      {/* View Mode Switcher and Search */}
+      <div className="bg-white rounded-xl shadow-md p-4">
+        <div className="flex flex-col md:flex-row justify-between gap-4">
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setViewMode("aktif")}
+              className={`flex items-center px-4 py-2 text-sm font-medium rounded-lg border ${
+                viewMode === "aktif"
+                  ? "bg-indigo-600 text-white border-indigo-700"
+                  : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+              }`}
+            >
+              <FiList className="mr-2" />
+              Pengajuan Aktif ({countByStatus.aktif})
+            </button>
+            <button
+              onClick={() => setViewMode("histori")}
+              className={`flex items-center px-4 py-2 text-sm font-medium rounded-lg border ${
+                viewMode === "histori"
+                  ? "bg-indigo-600 text-white border-indigo-700"
+                  : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+              }`}
+            >
+              <FiArchive className="mr-2" />
+              Histori Pengajuan ({countByStatus.histori})
+            </button>
+          </div>
+          
+          <div className="relative flex-grow md:max-w-md">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <FiSearch className="h-5 w-5 text-gray-400" />
+            </div>
+            <input
+              type="text"
+              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+              placeholder="Cari mahasiswa, jenis layanan atau NIM..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+        </div>
+
+        {viewMode === "aktif" && (
+          <div className="mt-4 flex flex-wrap gap-2">
+            <button
+              onClick={() => setActiveFilter("aktif")}
+              className={`flex items-center px-3 py-1.5 text-xs font-medium rounded-full border ${
+                activeFilter === "aktif"
+                  ? "bg-indigo-50 text-indigo-700 border-indigo-300"
+                  : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50"
+              }`}
+            >
+              <FiInbox className="mr-1.5" />
+              Semua ({countByStatus.aktif})
+            </button>
+            <button
+              onClick={() => setActiveFilter("menunggu")}
+              className={`flex items-center px-3 py-1.5 text-xs font-medium rounded-full border ${
+                activeFilter === "menunggu"
+                  ? "bg-yellow-50 text-yellow-700 border-yellow-300"
+                  : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50"
+              }`}
+            >
+              <FiClockCircle className="mr-1.5" />
+              Menunggu ({countByStatus.menunggu})
+            </button>
+            <button
+              onClick={() => setActiveFilter("diproses")}
+              className={`flex items-center px-3 py-1.5 text-xs font-medium rounded-full border ${
+                activeFilter === "diproses"
+                  ? "bg-blue-50 text-blue-700 border-blue-300"
+                  : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50"
+              }`}
+            >
+              <FiRefreshCw className="mr-1.5" />
+              Diproses ({countByStatus.diproses})
+            </button>
+          </div>
+        )}
+        
+        {viewMode === "histori" && (
+          <div className="mt-4 flex flex-wrap gap-2">
+            <button
+              onClick={() => setActiveFilter("histori")}
+              className={`flex items-center px-3 py-1.5 text-xs font-medium rounded-full border ${
+                activeFilter === "histori"
+                  ? "bg-indigo-50 text-indigo-700 border-indigo-300"
+                  : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50"
+              }`}
+            >
+              <FiInbox className="mr-1.5" />
+              Semua ({countByStatus.histori})
+            </button>
+            <button
+              onClick={() => setActiveFilter("selesai")}
+              className={`flex items-center px-3 py-1.5 text-xs font-medium rounded-full border ${
+                activeFilter === "selesai"
+                  ? "bg-green-50 text-green-700 border-green-300"
+                  : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50"
+              }`}
+            >
+              <FiCheckCircle className="mr-1.5" />
+              Selesai ({countByStatus.selesai})
+            </button>
+            <button
+              onClick={() => setActiveFilter("tolak")}
+              className={`flex items-center px-3 py-1.5 text-xs font-medium rounded-full border ${
+                activeFilter === "tolak"
+                  ? "bg-red-50 text-red-700 border-red-300"
+                  : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50"
+              }`}
+            >
+              <FiXCircle className="mr-1.5" />
+              Ditolak ({countByStatus.tolak})
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Detail Modal */}
+      {/* Table View - More compact for many entries */}
+      {isLoading ? (
+        <div className="bg-white rounded-xl shadow-md p-10 text-center">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Memuat data pengajuan...</p>
+        </div>
+      ) : paginatedData.length === 0 ? (
+        <div className="bg-white rounded-xl shadow-md p-10 text-center">
+          <div className="flex justify-center">
+            <FiInbox size={40} className="text-gray-400" />
+          </div>
+          <p className="mt-4 text-gray-600">Tidak ada pengajuan yang ditemukan</p>
+        </div>
+      ) : (
+        <div className="bg-white rounded-xl shadow-md overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Jenis Layanan
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Mahasiswa
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Waktu Pengajuan
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Jadwal Pengambilan
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Aksi
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {paginatedData.map((item) => {
+                  const isRecent = getRecentIndicator(getSubmissionDate(item));
+                  return (
+                    <tr 
+                      key={item.id} 
+                      className={`hover:bg-gray-50 ${isRecent ? "bg-indigo-50/30" : ""}`}
+                    >
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${STATUS_COLORS[item.status]}`}>
+                          {STATUS_ICONS[item.status]}
+                          {item.status}
+                        </span>
+                        {isRecent && (
+                          <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 border border-indigo-200">
+                            Baru
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm font-medium text-gray-900">
+                          {jenisLayananMap[item.jenis_layanan_id]}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-gray-900">
+                          {mahasiswaNames[item.mahasiswa_nim] || "Loading..."}
+                        </div>
+                        <div className="text-xs text-gray-500">{item.mahasiswa_nim}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-500">
+                          {getSubmissionDate(item) ? formatTimestamp(getSubmissionDate(item)) : "-"}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {item.jadwal_pengambilan ? (
+                          <div className="flex items-center text-sm text-gray-700">
+                            <FiCalendar className="text-gray-400 mr-1.5" size={14} />
+                            <span>{format(new Date(item.jadwal_pengambilan), "dd MMM yyyy • HH:mm")}</span>
+                          </div>
+                        ) : (
+                          <span className="text-sm text-gray-500">-</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <div className="flex justify-end space-x-2">
+                          <button 
+                            onClick={() => handleViewDetail(item)} 
+                            className="text-indigo-600 hover:text-indigo-900 transition-colors"
+                            title="Lihat Detail"
+                          >
+                            <FiEye size={18} />
+                          </button>
+                          <button 
+                            onClick={() => handleEdit(item)} 
+                            className="text-blue-600 hover:text-blue-900 transition-colors"
+                            title="Edit Pengajuan"
+                          >
+                            <FiEdit2 size={18} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="bg-gray-50 px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+              <div className="flex-1 flex justify-between sm:hidden">
+                <button
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                  className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${
+                    currentPage === 1 
+                      ? "bg-gray-100 text-gray-400 cursor-not-allowed" 
+                      : "bg-white text-gray-700 hover:bg-gray-50"
+                  }`}
+                >
+                  Previous
+                </button>
+                <button
+                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                  disabled={currentPage === totalPages}
+                  className={`ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${
+                    currentPage === totalPages 
+                      ? "bg-gray-100 text-gray-400 cursor-not-allowed" 
+                      : "bg-white text-gray-700 hover:bg-gray-50"
+                  }`}
+                >
+                  Next
+                </button>
+              </div>
+              <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm text-gray-700">
+                    Menampilkan <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> - <span className="font-medium">{Math.min(currentPage * itemsPerPage, sortedData.length)}</span> dari <span className="font-medium">{sortedData.length}</span> pengajuan
+                  </p>
+                </div>
+                <div>
+                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                    <button
+                      onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                      disabled={currentPage === 1}
+                      className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 text-sm font-medium ${
+                        currentPage === 1 
+                          ? "bg-gray-100 text-gray-400 cursor-not-allowed" 
+                          : "bg-white text-gray-500 hover:bg-gray-50"
+                      }`}
+                    >
+                      <span className="sr-only">Previous</span>
+                      <FiChevronLeft className="h-5 w-5" />
+                    </button>
+                    
+                    {/* Page Numbers */}
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNumber;
+                      if (totalPages <= 5) {
+                        pageNumber = i + 1;
+                      } else if (currentPage <= 3) {
+                        pageNumber = i + 1;
+                      } else if (currentPage >= totalPages - 2) {
+                        pageNumber = totalPages - 4 + i;
+                      } else {
+                        pageNumber = currentPage - 2 + i;
+                      }
+                      
+                      if (pageNumber > 0 && pageNumber <= totalPages) {
+                        return (
+                          <button
+                            key={pageNumber}
+                            onClick={() => setCurrentPage(pageNumber)}
+                            className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                              currentPage === pageNumber
+                                ? "z-10 bg-indigo-50 border-indigo-500 text-indigo-600"
+                                : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
+                            }`}
+                          >
+                            {pageNumber}
+                          </button>
+                        );
+                      }
+                      return null;
+                    })}
+                    
+                    <button
+                      onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                      disabled={currentPage === totalPages}
+                      className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 text-sm font-medium ${
+                        currentPage === totalPages 
+                          ? "bg-gray-100 text-gray-400 cursor-not-allowed" 
+                          : "bg-white text-gray-500 hover:bg-gray-50"
+                      }`}
+                    >
+                      <span className="sr-only">Next</span>
+                      <FiChevronRight className="h-5 w-5" />
+                    </button>
+                  </nav>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Detail Modal - Kept the same but with updated icons */}
       {detailModalOpen && selectedItem && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-3xl max-h-screen overflow-y-auto relative">
@@ -326,7 +688,7 @@ const AdminPelayanan = () => {
                 onClick={() => setDetailModalOpen(false)} 
                 className="text-gray-500 hover:text-red-600 transition-colors"
               >
-                <X size={20} />
+                <FiX size={20} />
               </button>
             </div>
             
@@ -334,7 +696,7 @@ const AdminPelayanan = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="p-4 bg-gray-50 rounded-lg">
                   <div className="flex items-center mb-2">
-                    <User size={18} className="text-gray-500 mr-2" />
+                    <FiUser size={18} className="text-gray-500 mr-2" />
                     <h3 className="text-sm font-medium text-gray-600">Identitas</h3>
                   </div>
                   <p className="text-sm text-gray-800 font-medium">
@@ -345,12 +707,13 @@ const AdminPelayanan = () => {
                 
                 <div className="p-4 bg-gray-50 rounded-lg">
                   <div className="flex items-center mb-2">
-                    <Tag size={18} className="text-gray-500 mr-2" />
+                    <FiTag size={18} className="text-gray-500 mr-2" />
                     <h3 className="text-sm font-medium text-gray-600">Layanan</h3>
                   </div>
                   <p className="text-sm text-gray-800">{jenisLayananMap[selectedItem.jenis_layanan_id]}</p>
                   <p className="text-sm text-gray-600">
                     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mt-1 ${STATUS_COLORS[selectedItem.status]}`}>
+                      {STATUS_ICONS[selectedItem.status]}
                       {selectedItem.status}
                     </span>
                   </p>
@@ -359,7 +722,7 @@ const AdminPelayanan = () => {
                 {getSubmissionDate(selectedItem) && (
                   <div className="p-4 bg-gray-50 rounded-lg">
                     <div className="flex items-center mb-2">
-                      <Clock size={18} className="text-gray-500 mr-2" />
+                      <FiClock size={18} className="text-gray-500 mr-2" />
                       <h3 className="text-sm font-medium text-gray-600">Waktu Pengajuan</h3>
                     </div>
                     <p className="text-sm text-gray-800">
@@ -376,7 +739,7 @@ const AdminPelayanan = () => {
                 {selectedItem.jadwal_pengambilan && (
                   <div className="p-4 bg-gray-50 rounded-lg">
                     <div className="flex items-center mb-2">
-                      <Calendar size={18} className="text-gray-500 mr-2" />
+                      <FiCalendar size={18} className="text-gray-500 mr-2" />
                       <h3 className="text-sm font-medium text-gray-600">Jadwal Pengambilan</h3>
                     </div>
                     <p className="text-sm text-gray-800">
@@ -391,7 +754,7 @@ const AdminPelayanan = () => {
                 {selectedItem.catatan_admin && (
                   <div className="p-4 bg-gray-50 rounded-lg">
                     <div className="flex items-center mb-2">
-                      <FileText size={18} className="text-gray-500 mr-2" />
+                      <FiFileText size={18} className="text-gray-500 mr-2" />
                       <h3 className="text-sm font-medium text-gray-600">Catatan Admin</h3>
                     </div>
                     <p className="text-sm text-gray-800">{selectedItem.catatan_admin}</p>
@@ -419,7 +782,7 @@ const AdminPelayanan = () => {
                             onClick={() => handleViewPdf(doc.file_url)}
                             className="text-indigo-600 hover:text-indigo-900 text-sm font-medium flex items-center"
                           >
-                            <Eye size={16} className="mr-1" />
+                            <FiEye size={16} className="mr-1" />
                             Lihat
                           </button>
                           <a 
@@ -427,7 +790,7 @@ const AdminPelayanan = () => {
                             download={doc.nama_dokumen}
                             className="text-gray-600 hover:text-gray-900 text-sm font-medium flex items-center"
                           >
-                            <Download size={16} className="mr-1" />
+                            <FiDownload size={16} className="mr-1" />
                             Unduh
                           </a>
                         </div>
@@ -443,7 +806,7 @@ const AdminPelayanan = () => {
                 onClick={() => handleEdit(selectedItem)}
                 className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
               >
-                <Pencil size={16} className="mr-2" />
+                <FiEdit2 size={16} className="mr-2" />
                 Edit Pengajuan
               </button>
             </div>
@@ -451,7 +814,7 @@ const AdminPelayanan = () => {
         </div>
       )}
 
-      {/* Edit Modal */}
+      {/* Edit Modal - Keeping functionality the same with updated styling */}
       {editModalOpen && selectedItem && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md relative overflow-hidden">
@@ -466,7 +829,7 @@ const AdminPelayanan = () => {
               onClick={() => setEditModalOpen(false)} 
               className="absolute top-4 right-4 text-white hover:text-blue-200 transition-colors"
             >
-              <X size={20} />
+              <FiX size={20} />
             </button>
 
             <div className="p-6 space-y-6">
@@ -502,7 +865,6 @@ const AdminPelayanan = () => {
                   />
                 </div>
 
-                {/* Jadwal Pengambilan - hanya ditampilkan jika status bukan Diproses atau Tolak */}
                 {needsPickupDate(selectedItem.status) && (
                   <div>
                     <label className="block mb-2 text-sm font-medium text-gray-700">Jadwal Pengambilan</label>
@@ -510,7 +872,7 @@ const AdminPelayanan = () => {
                       type="datetime-local"
                       value={selectedItem.jadwal_pengambilan?.slice(0, 16) || ""}
                       onChange={(e) => setSelectedItem({ ...selectedItem, jadwal_pengambilan: e.target.value })}
-                      min={new Date().toISOString().slice(0, 16)} // Membatasi tanggal dan waktu minimum
+                      min={new Date().toISOString().slice(0, 16)}
                       className="w-full p-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
@@ -536,7 +898,7 @@ const AdminPelayanan = () => {
         </div>
       )}
 
-      {/* PDF Viewer Modal using iframe */}
+      {/* PDF Viewer Modal - Kept the same with updated icons */}
       {pdfModalOpen && selectedPdf && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl p-4 w-full max-w-5xl h-5/6 flex flex-col relative">
@@ -546,7 +908,7 @@ const AdminPelayanan = () => {
                 onClick={() => setPdfModalOpen(false)} 
                 className="text-gray-500 hover:text-red-600 transition-colors"
               >
-                <X size={20} />
+                <FiX size={20} />
               </button>
             </div>
             
@@ -572,7 +934,7 @@ const AdminPelayanan = () => {
                 download
                 className="flex items-center text-blue-600 hover:text-blue-800 text-sm font-medium"
               >
-                <Download size={16} className="mr-1" />
+                <FiDownload size={16} className="mr-1" />
                 Unduh
               </a>
             </div>
