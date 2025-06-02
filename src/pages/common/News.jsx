@@ -69,7 +69,8 @@ const News = () => {
                          item.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          (item.subtitle && item.subtitle.toLowerCase().includes(searchQuery.toLowerCase()));
     
-    const matchesStatus = filterStatus === 'all' || item.status === filterStatus;
+    // Hanya tampilkan berita dengan status 'published'
+    const matchesStatus = item.status === 'published';
     
     return matchesQuery && matchesStatus;
   });
@@ -113,25 +114,13 @@ const News = () => {
                   />
                 </div>
                 
-                <div className="flex gap-2">
-                  <select
-                    className="px-4 py-2.5 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    value={filterStatus}
-                    onChange={(e) => setFilterStatus(e.target.value)}
-                  >
-                    <option value="all">Semua Status</option>
-                    <option value="published">Published</option>
-                    <option value="draft">Draft</option>
-                  </select>
-                  
-                  <button
-                    onClick={fetchNews}
-                    className="px-4 py-2.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg flex items-center gap-2"
-                  >
-                    <RefreshCw size={18} className="text-blue-500" />
-                    <span>Refresh</span>
-                  </button>
-                </div>
+                <button
+                  onClick={fetchNews}
+                  className="px-4 py-2.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg flex items-center gap-2"
+                >
+                  <RefreshCw size={18} className="text-blue-500" />
+                  <span>Refresh</span>
+                </button>
               </div>
             </div>
 
