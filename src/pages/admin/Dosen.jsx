@@ -3,6 +3,7 @@ import axios from "axios";
 import { Plus, Trash2, Pencil, RefreshCw, X, AlertCircle, CheckCircle2, Search } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { Link } from 'react-router-dom';
 
 const AdminDosen = () => {
   const [dosenList, setDosenList] = useState([]);
@@ -295,6 +296,15 @@ const AdminDosen = () => {
             <RefreshCw className="w-5 h-5" />
             Refresh
           </button>
+          
+  
+<Link
+  to="/admin/presensi-dosen"
+  className="flex items-center justify-center gap-2 bg-green-600 text-white px-5 py-3 rounded-xl hover:bg-green-700 transition-all shadow-sm font-medium"
+>
+  <CheckCircle2 className="w-5 h-5" />
+  Presensi Dosen
+</Link>
           
           <button
             onClick={() => {
