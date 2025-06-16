@@ -43,7 +43,7 @@ const JadwalBimbinganMahasiswa = () => {
       const dosenIndex = newState.findIndex(dosen => dosen.dosenAlias === inisial);
       
       if (dosenIndex !== -1) {
-        // Find the jadwal that matches the waktu_id
+        // Find the jadwal that mat`ches the waktu_id
         const jadwalIndex = newState[dosenIndex].jadwalList.findIndex(
           jadwal => jadwal.bimbingan_id === waktu_id
         );
@@ -359,6 +359,108 @@ const JadwalBimbinganMahasiswa = () => {
     setIsDetailModalOpen(false);
     setSelectedAntrianDetail(null);
   };
+  // Function to cancel an antrian
+const handleCancelAntrian = async (antrianId) => {
+  try {
+    setProcessingAntrian(true);
+    setProcessingAntrianId(antrianId);
+    
+    const response = await fetch(`${API}/antrian/${antrianId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    if (response.ok) {
+      toast.success('Antrian berhasil dibatalkan');
+      
+      // Update local state to remove the canceled antrian
+      setJadwalByDosen(prevState => {
+        const newState = [...prevState];
+        
+        for (let i = 0; i < newState.length; i++) {
+          for (let j = 0; j < newState[i].jadwalList.length; j++) {
+            const jadwal = newState[i].jadwalList[j];
+            
+            if (jadwal.antrian_bimbingan) {
+              newState[i].jadwalList[j].antrian_bimbingan = jadwal.antrian_bimbingan.filter(
+                antrian => antrian.id_antrian !== antrianId
+              );
+            }
+          }
+        }
+        
+        return newState;
+      });
+      
+      closeDetailModal();
+    } else {
+      const errorData = await response.json();
+      toast.error(errorData.detail || 'Gagal membatalkan antrian');
+    }
+  } catch (err) {
+    console.error("Error saat membatalkan antrian:", err);
+    toast.error("Terjadi kesalahan saat membatalkan antrian");
+  } finally {
+    setProcessingAntrian(false);
+    setProcessingAntrianId(null);
+  }
+};
+
+// Function to update file for an antrian
+const handleUpdateFile = async (antrianId) => {
+  if (!selectedFile) {
+    toast.error('Silakan pilih file terlebih dahulu');
+    return;
+  }
+  
+  setProcessingAntrian(true);
+  setProcessingAntrianId(antrianId);
+  
+  try {
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+    
+    const response = await fetch(`${API}/antrian/${antrianId}`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      },
+      body: formData
+    });
+    
+    if (response.ok) {
+      const result = await response.json();
+      toast.success('File berhasil diperbarui');
+      
+      // Update the selected antrian detail with new file info
+      setSelectedAntrianDetail(prev => ({
+        ...prev,
+        files: {
+          ...prev.files,
+          filename: selectedFile.name,
+          file_url: result.file_url || prev.files?.file_url
+        }
+      }));
+      
+      // Reset file input
+      setSelectedFile(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    } else {
+      const errorData = await response.json();
+      toast.error(errorData.detail || 'Gagal memperbarui file');
+    }
+  } catch (err) {
+    console.error("Error saat memperbarui file:", err);
+    toast.error("Terjadi kesalahan saat memperbarui file");
+  } finally {
+    setProcessingAntrian(false);
+    setProcessingAntrianId(null);
+  }
+};
 
   const handleUpdateAntrianStatus = async (antrianId) => {
     setProcessingAntrian(true);
@@ -1013,26 +1115,67 @@ const JadwalBimbinganMahasiswa = () => {
                   File Bimbingan
                 </h4>
                 
-                <div className="bg-blue-50 rounded-lg p-3 border border-blue-100 flex items-center justify-between">
-                  <div className="flex items-center">
-                    <FileText size={16} className="text-blue-600 mr-2" />
-                    <div>
-                      <p className="text-sm font-medium text-blue-700 truncate max-w-[200px]">
-                        {selectedAntrianDetail.files.filename}
-                      </p>
+                {selectedAntrianDetail.files ? (
+                  <div className="bg-blue-50 rounded-lg p-3 border border-blue-100 flex items-center justify-between mb-3">
+                    <div className="flex items-center">
+                      <FileText size={16} className="text-blue-600 mr-2" />
+                      <div>
+                        <p className="text-sm font-medium text-blue-700 truncate max-w-[200px]">
+                          {selectedAntrianDetail.files.filename}
+                        </p>
+                      </div>
                     </div>
+                    
+                    <a 
+                      href={selectedAntrianDetail.files.file_url} 
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs flex items-center"
+                    >
+                      <Download size={14} className="mr-1" />
+                      Download
+                    </a>
                   </div>
-                  
-                  <a 
-                    href={selectedAntrianDetail.files.file_url} 
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs flex items-center"
-                  >
-                    <Download size={14} className="mr-1" />
-                    Download
-                  </a>
-                </div>
+                ) : (
+                  <p className="text-sm text-gray-500 italic mb-3">Tidak ada file yang dilampirkan</p>
+                )}
+                
+                {/* Add file update section */}
+                {selectedAntrianDetail.status_antrian !== "Selesai" && (
+                  <div className="mt-3">
+                    <p className="text-sm font-medium text-gray-700 mb-2">Perbarui File</p>
+                    <div className="flex items-center">
+                      <input
+                        type="file"
+                        onChange={handleFileChange}
+                        ref={fileInputRef}
+                        className="block w-full text-sm text-gray-500
+                          file:mr-3 file:py-1.5 file:px-3
+                          file:rounded-md file:border-0
+                          file:text-sm file:font-medium
+                          file:bg-blue-50 file:text-blue-700
+                          hover:file:bg-blue-100"
+                      />
+                      <button
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-sm flex items-center whitespace-nowrap ml-2"
+                        onClick={() => handleUpdateFile(selectedAntrianDetail.id_antrian)}
+                        disabled={!selectedFile || processingAntrian}
+                      >
+                        <Upload size={14} className="mr-1" />
+                        {processingAntrian && processingAntrianId === selectedAntrianDetail.id_antrian ? 'Mengunggah...' : 'Upload'}
+                      </button>
+                    </div>
+                    {selectedFile && (
+                      <div className="mt-2 p-2 bg-blue-50 rounded border border-blue-100 flex items-center">
+                        <FileText size={14} className="text-blue-600 mr-2" />
+                        <div className="flex-1 truncate">
+                          <p className="text-xs font-medium text-blue-700 truncate">{getFileName()}</p>
+                          <p className="text-xs text-blue-600">{getFileSize()}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
             
@@ -1042,19 +1185,36 @@ const JadwalBimbinganMahasiswa = () => {
               
               <div className="flex flex-wrap gap-3">
                 {selectedAntrianDetail.status_antrian === "Menunggu" && (
-                  <button
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    onClick={() => handleUpdateAntrianStatus(selectedAntrianDetail.id_antrian)}
-                    disabled={processingAntrian}
-                  >
-                    {processingAntrian && processingAntrianId === selectedAntrianDetail.id_antrian ? (
-                      "Memproses..."
-                    ) : (
-                      <>
-                        <Play size={16} /> Mulai Bimbingan
-                      </>
-                    )}
-                  </button>
+                  <>
+                    <button
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      onClick={() => handleUpdateAntrianStatus(selectedAntrianDetail.id_antrian)}
+                      disabled={processingAntrian}
+                    >
+                      {processingAntrian && processingAntrianId === selectedAntrianDetail.id_antrian ? (
+                        "Memproses..."
+                      ) : (
+                        <>
+                          <Play size={16} /> Mulai Bimbingan
+                        </>
+                      )}
+                    </button>
+                    
+                    {/* Add Cancel button */}
+                    <button
+                      className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      onClick={() => handleCancelAntrian(selectedAntrianDetail.id_antrian)}
+                      disabled={processingAntrian}
+                    >
+                      {processingAntrian && processingAntrianId === selectedAntrianDetail.id_antrian ? (
+                        "Memproses..."
+                      ) : (
+                        <>
+                          <X size={16} /> Batalkan Antrian
+                        </>
+                      )}
+                    </button>
+                  </>
                 )}
                 
                 {selectedAntrianDetail.status_antrian === "Dalam Bimbingan" && (

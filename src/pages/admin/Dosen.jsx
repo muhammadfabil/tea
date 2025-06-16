@@ -23,6 +23,7 @@ const AdminDosen = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteItemId, setDeleteItemId] = useState(null);
   const [deleteDosenInfo, setDeleteDosenInfo] = useState(null);
+  const [originalAlias, setOriginalAlias] = useState(null); // Tambahkan state untuk menyimpan alias asli
 
   const API = import.meta.env.VITE_API_BASE_URL;
 
@@ -69,12 +70,15 @@ const AdminDosen = () => {
     }
   };
 
+  // Modifikasi fungsi handleEditSubmit
   const handleEditSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    
     try {
-      setLoading(true);
+      // Gunakan originalAlias untuk URL, bukan editDosen.alias yang sudah berubah
       const response = await axios.put(
-        `${API}/dosen/${editDosen.alias}`,
+        `${API}/dosen/${originalAlias}`, 
         {
           ...editDosen,
           status_kehadiran: Boolean(editDosen.status_kehadiran),
@@ -102,6 +106,8 @@ const AdminDosen = () => {
         
         setShowEditModal(false);
         setEditDosen(null);
+        // Reset juga originalAlias
+        setOriginalAlias(null);
         toast.success("Dosen berhasil diperbarui");
       }
     } catch (error) {
@@ -111,7 +117,7 @@ const AdminDosen = () => {
       setLoading(false);
     }
   };
-
+  
   const handleCreateSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -386,6 +392,7 @@ const AdminDosen = () => {
                         <button
                           onClick={() => {
                             setEditDosen(dosen);
+                            setOriginalAlias(dosen.alias); // Simpan alias asli
                             setShowEditModal(true);
                           }}
                           className="p-1.5 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"

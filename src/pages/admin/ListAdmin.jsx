@@ -79,7 +79,7 @@ const KelolaAdmin = () => {
   const handleDelete = async (id) => {
     try {
       setIsLoading(true);
-      await axios.delete(`${API}/adminn/${id}`, { headers });
+      await axios.delete(`${API}/admin/${id}`, { headers });
       toast.success("Admin berhasil dihapus.");
       fetchAdmin();
       setDeleteConfirm(null);

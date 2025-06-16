@@ -1,10 +1,12 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { GraduationCap, Users, FileText, Calendar, Shield, ArrowRight, CheckCircle, BookOpen, Clock, Layout } from "lucide-react";
 import AOS from "aos";
 import "aos/dist/aos.css";
 
 const LandingPage = () => {
+  const [showCredit, setShowCredit] = useState(false);
+
   useEffect(() => {
     // Inisialisasi AOS (Animation on Scroll)
     AOS.init({
@@ -12,15 +14,36 @@ const LandingPage = () => {
       easing: 'ease-in-out',
       once: true,
       mirror: false,
-      offset: 100 // Add offset to trigger animations earlier
+      offset: 100
     });
     
-    // Trigger AOS refresh when page is fully loaded
+    // Function to handle scroll and show/hide credit
+    const handleScroll = () => {
+      const heroSection = document.querySelector('header');
+      const footerSection = document.querySelector('footer');
+      
+      if (heroSection && footerSection) {
+        const heroBottom = heroSection.offsetTop + heroSection.offsetHeight;
+        const footerTop = footerSection.offsetTop;
+        const scrollPosition = window.scrollY + window.innerHeight;
+        
+        // Show credit after hero section and hide before footer
+        if (window.scrollY > heroBottom && scrollPosition < footerTop + 100) {
+          setShowCredit(true);
+        } else {
+          setShowCredit(false);
+        }
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
     window.addEventListener('load', () => {
       AOS.refresh();
+      handleScroll(); // Check initial position
     });
     
     return () => {
+      window.removeEventListener('scroll', handleScroll);
       window.removeEventListener('load', () => {
         AOS.refresh();
       });
@@ -304,11 +327,36 @@ const LandingPage = () => {
             {/* Copyright */}
             <div className="mt-4 md:mt-0 text-center md:text-right">
               <p className="mb-1">© 2025 SIMANTAP. All rights reserved.</p>
-              <p className="text-sm text-slate-500">Developed by <span className="text-slate-300">Muhammad Fabil | Andreas Gumarang Sihotang</span></p>
             </div>
           </div>
         </div>
       </footer>
+
+      {/* Conditional Sticky Developer Credit */}
+      {showCredit && (
+        <div className="fixed bottom-0 left-0 w-full bg-slate-900 text-slate-300 py-3 shadow-lg border-t border-slate-600 z-50 transition-all duration-300">
+          <p className="text-sm text-center">
+            Developed by{' '}
+            <a 
+              href="https://www.linkedin.com/in/muhammad-fabil" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-blue-400 hover:text-blue-300 font-medium transition-colors duration-200 underline decoration-transparent hover:decoration-blue-400"
+            >
+              Muhammad Fabil
+            </a>
+            {' | '}
+            <a 
+              href="https://www.linkedin.com/in/andreas-sihotang-93b971179" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-blue-400 hover:text-blue-300 font-medium transition-colors duration-200 underline decoration-transparent hover:decoration-blue-400"
+            >
+              Andreas Gumarang Sihotang
+            </a>
+          </p>
+        </div>
+      )}
     </div>
   );
 };

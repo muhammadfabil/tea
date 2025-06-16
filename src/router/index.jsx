@@ -42,6 +42,7 @@ import ListAdmin from "../pages/admin/ListAdmin";
 import News from "../pages/common/News";
 import NewsAdmin from "../pages/admin/NewsAdmin";
 import ProfileMahasiswa from "../pages/mahasiswa/Profile";
+import RekapPresensiDosen from "../pages/admin/RekapPresensiDosen"; // ← perbaikan path, tadi typo "./.pages"
 
 import ResetPassPage from "../pages/common/ResetPassPage";
 import ResetPassRequest from "../pages/common/ResetPassRequest";
@@ -98,6 +99,7 @@ const AppRouter = () => {
       <Route path="manajemen-pelayanan" element={<LayananAdmin />} />
       <Route path="list-admin" element={<ListAdmin/>} />
       <Route path="news" element={<NewsAdmin />} />
+      <Route path="presensi-dosen" element={<RekapPresensiDosen />} />
     </Route>
   </Route>
 
