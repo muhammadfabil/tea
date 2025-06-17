@@ -160,6 +160,30 @@ const DosenLayout = () => {
         <main className="flex-1 overflow-y-auto p-4 md:p-6">
           <Outlet />
         </main>
+
+        {/* Footer developer credits */}
+        <footer className="bg-white py-2 px-4 text-xs font-medium text-center text-slate-500 border-t border-slate-200">
+          <p>
+            Developed by{" "}
+            <a 
+              href="https://www.linkedin.com/in/muhammadfabil" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:text-blue-800 transition-colors"
+            >
+              Muhammad Fabil
+            </a>
+            {" "} | {" "}
+            <a 
+              href="https://www.linkedin.com/in/andreas-sihotang-93b971179" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:text-blue-800 transition-colors"
+            >
+              Andreas Gumarang Sihotang
+            </a>
+          </p>
+        </footer>
       </div>
 
       {/* Logout Confirmation Modal */}

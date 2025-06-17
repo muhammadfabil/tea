@@ -297,6 +297,30 @@ const AntreanDosen = () => {
         </div>
       </div>
 
+      {/* Footer developer credits - Making it sticky like in AdminLayout */}
+      <footer className="bg-white py-2 px-4 text-xs font-medium text-center text-slate-500 border-t border-slate-200 fixed bottom-0 left-0 right-0 z-20">
+        <p>
+          Developed by{" "}
+          <a 
+            href="https://www.linkedin.com/in/muhammadfabil" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-blue-600 hover:text-blue-800 transition-colors"
+          >
+            Muhammad Fabil
+          </a>
+          {" "} | {" "}
+          <a 
+            href="https://www.linkedin.com/in/andreas-sihotang-93b971179" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-blue-600 hover:text-blue-800 transition-colors"
+          >
+            Andreas Gumarang Sihotang
+          </a>
+        </p>
+      </footer>
+
       {/* Floating navigation button */}
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
@@ -313,7 +337,7 @@ const AntreanDosen = () => {
               <FaArrowLeft className="w-4 h-4" />
             </div>
             <span className="font-medium">
-              {isLoggedIn ? 'Kembali ke Dashboard' : 'Kembali ke Beranda'}
+              {isLoggedIn ? 'Kembali' : 'Kembali'}
             </span>
           </Link>
           

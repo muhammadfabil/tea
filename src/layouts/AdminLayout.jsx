@@ -168,23 +168,45 @@ const AdminLayout = () => {
         </div>
 
         <div className="bg-white text-blue-800 py-4 px-6 shadow-md border-b border-gray-200 flex flex-col items-center justify-center space-y-1">
-  <div className="flex items-center space-x-2">
-    <GrTechnology className="w-7 h-7 text-blue-700" />
-    <h1 className="text-xl font-bold tracking-wide bg-gradient-to-r from-blue-700 to-blue-900 text-transparent bg-clip-text">
-      SIMANTAP
-    </h1>
-  </div>
-  <p className="text-xs text-blue-600 tracking-wide font-medium text-center">
-  Sistem Manajemen Layanan Administrasi dan Antrean Program Studi
-  </p>
-</div>
-
-
+          <div className="flex items-center space-x-2">
+            <GrTechnology className="w-7 h-7 text-blue-700" />
+            <h1 className="text-xl font-bold tracking-wide bg-gradient-to-r from-blue-700 to-blue-900 text-transparent bg-clip-text">
+              SIMANTAP
+            </h1>
+          </div>
+          <p className="text-xs text-blue-600 tracking-wide font-medium text-center">
+          Sistem Manajemen Layanan Administrasi dan Antrean Program Studi
+          </p>
+        </div>
 
         {/* Page Content Scrollable */}
         <main className="flex-1 overflow-y-auto p-4 md:p-6">
           <Outlet />
         </main>
+        
+        {/* Footer developer credits */}
+        <footer className="bg-white py-2 px-4 text-xs font-medium text-center text-slate-500 border-t border-slate-200">
+          <p>
+            Developed by{" "}
+            <a 
+              href="https://www.linkedin.com/in/muhammadfabil" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:text-blue-800 transition-colors"
+            >
+              Muhammad Fabil
+            </a>
+            {" "} | {" "}
+            <a 
+              href="https://www.linkedin.com/in/andreas-sihotang-93b971179" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:text-blue-800 transition-colors"
+            >
+              Andreas Gumarang Sihotang
+            </a>
+          </p>
+        </footer>
       </div>
 
       {/* Logout Confirmation Modal */}

@@ -4,7 +4,8 @@ import { format, parseISO, getYear, getMonth } from "date-fns";
 import { id } from "date-fns/locale";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { FiSearch, FiRefreshCw, FiDownload, FiCalendar, FiFilter, FiX, FiChevronRight, FiUser, FiCheckCircle, FiClock } from "react-icons/fi";
+import { Link } from "react-router-dom";
+import { FiSearch, FiRefreshCw, FiDownload, FiCalendar, FiFilter, FiX, FiChevronRight, FiUser, FiCheckCircle, FiClock, FiArrowLeft } from "react-icons/fi";
 import { useAuth } from "../../context/AuthContext";
 
 const RekapPresensiDosen = () => {
@@ -391,18 +392,41 @@ const RekapPresensiDosen = () => {
         theme="light"
       />
       
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-800 mb-2">Rekap Presensi Dosen</h1>
-        <p className="text-slate-500">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+          <div>
+            <div className="flex items-center mb-2">
+          {selectedDosen && (
+            <button 
+              onClick={handleBackToDaftar}
+              className="mr-3 p-2 bg-blue-500 text-white hover:bg-blue-600 hover:text-white hover:cursor-pointer rounded-full transition-colors inline-flex items-center"
+              title="Kembali ke daftar dosen"
+            >
+              <FiArrowLeft className="w-5 h-5" />
+            </button>
+          )}
+          <h1 className="text-3xl font-bold text-slate-800">Rekap Presensi Dosen</h1>
+            </div>
+            <p className="text-slate-500">
           {selectedDosen 
             ? `Melihat detail kehadiran dosen ${selectedDosen.nama}`
             : "Lihat dan analisis data kehadiran dosen"
           }
-        </p>
-      </div>
-      
-      {/* Navigation/Breadcrumbs */}
+            </p>
+          </div>
+          
+         
+          {!selectedDosen && (
+            <Link 
+          to="/admin/dosen"
+          className="mt-3 md:mt-0 px-4 py-2 bg-blue-500 text-white border border-blue-500 rounded-lg hover:bg-blue-600 hover:text-white transition-colors shadow-sm flex items-center gap-2 text-sm font-medium"
+            >
+          <FiArrowLeft className="w-4 h-4" />
+          Kembali 
+            </Link>
+          )}
+        </div>
+        
+        {/* Navigation/Breadcrumbs */}
       {selectedDosen && (
         <div className="mb-6 flex items-center text-sm text-slate-600">
           <button 
@@ -452,8 +476,8 @@ const RekapPresensiDosen = () => {
       </div>
       
       {/* Filter and Actions */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
-        {!selectedDosen ? (
+      {!selectedDosen && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div className="relative w-full md:w-96">
               <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
@@ -486,68 +510,42 @@ const RekapPresensiDosen = () => {
               </button>
             </div>
           </div>
-        ) : (
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div className="flex items-center gap-3 w-full md:w-auto">
-              <button
-                onClick={() => setIsFilterModalOpen(true)}
-                className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-blue-100 text-blue-700 px-4 py-2.5 rounded-xl hover:bg-blue-200 transition-all shadow-sm font-medium"
-              >
-                <FiFilter className="w-4 h-4" />
-                Filter Tanggal
-              </button>
-              
-              <button
-                onClick={resetFilters}
-                className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-slate-200 text-slate-700 px-4 py-2.5 rounded-xl hover:bg-slate-300 transition-all shadow-sm font-medium"
-              >
-                <FiRefreshCw className="w-4 h-4" />
-                Reset
-              </button>
-              
-              <button
-                onClick={exportToCSV}
-                className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-green-600 text-white px-4 py-2.5 rounded-xl hover:bg-green-700 transition-all shadow-sm font-medium"
-              >
-                <FiDownload className="w-4 h-4" />
-                Export
-              </button>
-            </div>
-          </div>
-        )}
-        
-        {/* Active Filters Display - Only show when dosen is selected */}
-        {selectedDosen && (startDate || endDate) && (
-          <div className="mt-4 flex flex-wrap gap-2">
-            {startDate && (
-              <div className="inline-flex items-center px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-sm">
-                <FiCalendar className="w-3.5 h-3.5 mr-1" />
-                Dari: {formatDisplayDate(startDate).split(',')[1]}
-                <button 
-                  className="ml-2 hover:text-blue-900" 
-                  onClick={() => setStartDate("")}
-                >
-                  <FiX className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            )}
-            
-            {endDate && (
-              <div className="inline-flex items-center px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-sm">
-                <FiCalendar className="w-3.5 h-3.5 mr-1" />
-                Sampai: {formatDisplayDate(endDate).split(',')[1]}
-                <button 
-                  className="ml-2 hover:text-blue-900" 
-                  onClick={() => setEndDate("")}
-                >
-                  <FiX className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+        </div>
+      )}
+
+{/* Active Filters Display - Only show when dosen is selected and filters are active */}
+{selectedDosen && (startDate || endDate) && (
+  <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+    <div className="mt-4 flex flex-wrap gap-2">
+      {startDate && (
+        <div className="inline-flex items-center px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-sm">
+          <FiCalendar className="w-3.5 h-3.5 mr-1" />
+          Dari: {formatDisplayDate(startDate).split(',')[1]}
+          <button 
+            className="ml-2 hover:text-blue-900" 
+            onClick={() => setStartDate("")}
+          >
+            <FiX className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
       
+      {endDate && (
+        <div className="inline-flex items-center px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-sm">
+          <FiCalendar className="w-3.5 h-3.5 mr-1" />
+          Sampai: {formatDisplayDate(endDate).split(',')[1]}
+          <button 
+            className="ml-2 hover:text-blue-900" 
+            onClick={() => setEndDate("")}
+          >
+            <FiX className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+    </div>
+  </div>
+)}
+
       {/* Content Section */}
       {loading ? (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
