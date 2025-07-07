@@ -22,9 +22,9 @@ const RegisterMahasiswa = () => {
       return false;
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setError("Format email tidak valid!");
+    // Updated email validation to only allow @student.itera.ac.id emails
+    if (!email.endsWith("@student.itera.ac.id")) {
+      setError("Gunakan email dengan domain @student.itera.ac.id!");
       return false;
     }
 
@@ -160,8 +160,9 @@ const RegisterMahasiswa = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                placeholder="Masukkan email Anda"
+                placeholder="nama-depan.nim@student.itera.ac.id"
               />
+              <p className="mt-1 text-xs text-gray-500">Gunakan email dengan domain @student.itera.ac.id</p>
             </div>
             
             <div>

@@ -5,6 +5,7 @@ import { useAuth } from "../context/AuthContext";
 import { LiaChalkboardTeacherSolid } from "react-icons/lia";
 import { GrTechnology } from "react-icons/gr";
 import { FaRegNewspaper } from "react-icons/fa6";
+import { FaPersonCircleCheck } from "react-icons/fa6";
 
 
 const DosenLayout = () => {
@@ -105,6 +106,17 @@ const DosenLayout = () => {
               <div className="flex items-center">
                 <Users className="w-5 h-5 mr-3" />
                 <span>Profile</span>
+              </div>
+            </NavLink>
+            <NavLink
+              to="/dosen/presensi"
+              className={({ isActive }) =>
+                `${navItem} ${isActive ? activeNav : "text-gray-700"}`
+              }
+            >
+              <div className="flex items-center">
+                <FaPersonCircleCheck className="w-5 h-5 mr-3" />
+                <span>Rekap Presensi</span>
               </div>
             </NavLink>
             <NavLink

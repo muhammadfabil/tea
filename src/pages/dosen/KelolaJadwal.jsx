@@ -61,7 +61,7 @@ const KelolaWaktuBimbingan = () => {
     try {
       const endpoint = `${API}/antrian/f/${antrianId}`;
       const response = await fetch(endpoint, {
-        method: "PUT",
+        method: "PATCH",
         headers: {
           Authorization: `Bearer ${token}`,
         },

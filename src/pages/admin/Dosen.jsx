@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react"; // Tambahkan useRef
 import axios from "axios";
 import { Plus, Trash2, Pencil, RefreshCw, X, AlertCircle, CheckCircle2, Search } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
@@ -24,7 +24,10 @@ const AdminDosen = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteItemId, setDeleteItemId] = useState(null);
   const [deleteDosenInfo, setDeleteDosenInfo] = useState(null);
-  const [originalAlias, setOriginalAlias] = useState(null); // Tambahkan state untuk menyimpan alias asli
+  const [originalAlias, setOriginalAlias] = useState(null);
+  
+  // Tambahkan useRef untuk WebSocket
+  const wsRef = useRef(null);
 
   const API = import.meta.env.VITE_API_BASE_URL;
 
@@ -235,14 +238,81 @@ const AdminDosen = () => {
     }
   };
 
- useEffect(() => {
-  fetchDosen();
-
-  // Cleanup function to dismiss all toasts when the component unmounts
-  return () => {
-    toast.dismiss();
+  // Fungsi untuk update dosen berdasarkan data dari WebSocket
+  const updateDosenStatus = (inisial, status, nama, keterangan) => {
+    console.log(`Updating dosen ${inisial} status to:`, status, "keterangan:", keterangan);
+    
+    setDosenList((prevList) => {
+      return prevList.map((dosen) => {
+        if (dosen.alias === inisial) {
+          return {
+            ...dosen,
+            status_kehadiran: status,
+            name: nama || dosen.name,
+            keterangan: keterangan || dosen.keterangan,
+          };
+        }
+        return dosen;
+      });
+    });
   };
-}, []);
+
+  useEffect(() => {
+    // Fetch initial data
+    fetchDosen();
+
+    // Setup WebSocket connection
+    const connectWebSocket = () => {
+      wsRef.current = new WebSocket(`${API.replace(/^https?/, 'wss')}/ws/public`);
+
+      wsRef.current.onopen = () => {
+        console.log("WebSocket connected");
+      };
+
+      wsRef.current.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          console.log("WebSocket data received:", data);
+
+          if (data && data["Inisial Dosen"]) {
+            updateDosenStatus(
+              data["Inisial Dosen"],
+              data["Status Kehadiran"], 
+              data["Nama Dosen"],
+              data["Keterangan"] || "" 
+            );
+          }
+        } catch (error) {
+          console.error("Error parsing WebSocket data:", error);
+        }
+      };
+
+      wsRef.current.onclose = (e) => {
+        console.log("WebSocket disconnected:", e.reason);
+        // Try to reconnect after 3 seconds
+        setTimeout(() => {
+          connectWebSocket();
+        }, 3000);
+      };
+
+      wsRef.current.onerror = (error) => {
+        console.error("WebSocket error:", error);
+        wsRef.current.close();
+      };
+    };
+
+    connectWebSocket();
+
+    // Cleanup WebSocket connection on component unmount
+    return () => {
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        wsRef.current.close();
+      }
+      
+      // Dismiss all toasts when the component unmounts
+      toast.dismiss();
+    };
+  }, []);
 
   const filteredDosen = dosenList.filter(dosen => 
     dosen.name.toLowerCase().includes(searchTerm.toLowerCase()) ||

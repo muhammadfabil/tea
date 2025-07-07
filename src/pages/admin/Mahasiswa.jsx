@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { Eye, Trash2, X, User, Mail, BookOpen, GraduationCap, Users, AlertTriangle } from "lucide-react";
+import { Eye, Trash2, X, User, Mail, BookOpen, GraduationCap, Users, AlertTriangle, Search, Filter, ChevronLeft, ChevronRight } from "lucide-react";
 
 const AdminMahasiswa = () => {
   const [mahasiswa, setMahasiswa] = useState([]);
+  const [filteredMahasiswa, setFilteredMahasiswa] = useState([]);
   const [selectedMahasiswa, setSelectedMahasiswa] = useState(null);
   const [detailData, setDetailData] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -12,11 +13,64 @@ const AdminMahasiswa = () => {
   const [deleteId, setDeleteId] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [mahasiswaToDelete, setMahasiswaToDelete] = useState(null);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
+  
+  // Search and filter state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCohort, setSelectedCohort] = useState("");
+  
+  // Available cohorts
+  const cohorts = [
+    { value: "118", label: "Angkatan 2018" },
+    { value: "119", label: "Angkatan 2019" },
+    { value: "120", label: "Angkatan 2020" },
+    { value: "121", label: "Angkatan 2021" },
+    { value: "122", label: "Angkatan 2022" },
+    { value: "123", label: "Angkatan 2023" },
+    { value: "124", label: "Angkatan 2024" },
+    { value: "125", label: "Angkatan 2025" },
+    { value: "126", label: "Angkatan 2026" },
+    { value: "127", label: "Angkatan 2027" },
+    { value: "128", label: "Angkatan 2028" },
+    { value: "129", label: "Angkatan 2029" },
+    { value: "130", label: "Angkatan 2030" },
+  ];
 
   useEffect(() => {
     fetchMahasiswa();
-    
   }, []);
+
+  // Filter and search mahasiswa whenever data, search query or cohort changes
+  useEffect(() => {
+    let result = [...mahasiswa];
+    
+    // Sort by name alphabetically by default
+    result.sort((a, b) => a.nama.localeCompare(b.nama));
+    
+    // Filter by cohort if selected
+    if (selectedCohort) {
+      result = result.filter(mhs => {
+        // Check if NIM starts with the selected cohort code
+        return mhs.nim.startsWith(selectedCohort);
+      });
+    }
+    
+    // Filter by search query
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(mhs => 
+        mhs.nama.toLowerCase().includes(query) || 
+        mhs.nim.toLowerCase().includes(query) || 
+        mhs.email.toLowerCase().includes(query)
+      );
+    }
+    
+    setFilteredMahasiswa(result);
+    setCurrentPage(1); // Reset to first page when filters change
+  }, [mahasiswa, searchQuery, selectedCohort]);
 
   const getAuthToken = () => {
     const authData = localStorage.getItem("auth");
@@ -38,6 +92,7 @@ const AdminMahasiswa = () => {
   };
 
   const fetchMahasiswa = async () => {
+    setIsLoading(true);
     try {
       const token = getAuthToken();
       const response = await axios.get(`${API}/mahasiswa/all`, {
@@ -46,8 +101,11 @@ const AdminMahasiswa = () => {
         },
       });
       setMahasiswa(response.data);
+      setFilteredMahasiswa(response.data.sort((a, b) => a.nama.localeCompare(b.nama)));
     } catch (error) {
       console.error("Gagal mengambil data mahasiswa:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -122,8 +180,8 @@ const AdminMahasiswa = () => {
     setIsDeleting(true);
     try {
       const token = getAuthToken();
-      console.log("Mengirim request delete ke:", `${API}/mahasiswa/del/${deleteId}`); // Fixed URL
-      const response = await axios.delete(`${API}/mahasiswa/del/${deleteId}`, { // Updated URL
+      console.log("Mengirim request delete ke:", `${API}/mahasiswa/del/${deleteId}`);
+      const response = await axios.delete(`${API}/mahasiswa/del/${deleteId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -165,15 +223,92 @@ const AdminMahasiswa = () => {
     setMahasiswaToDelete(null);
   };
 
+  // Reset filters
+  const resetFilters = () => {
+    setSearchQuery("");
+    setSelectedCohort("");
+  };
+
+  // Pagination logic
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredMahasiswa.slice(indexOfFirstItem, indexOfLastItem);
+  
+  // Change page
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+  const nextPage = () => {
+    if (currentPage < Math.ceil(filteredMahasiswa.length / itemsPerPage)) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+  const prevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
   return (
     <div className="space-y-6 p-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-800">Kelola Mahasiswa</h1>
         <div className="bg-blue-50 px-4 py-2 rounded-lg text-sm text-blue-700">
-          Total: {mahasiswa.length} mahasiswa
+          Total: {filteredMahasiswa.length} mahasiswa
         </div>
       </div>
 
+      {/* Search and filter section */}
+      <div className="bg-white rounded-xl shadow-md p-4 border border-gray-100">
+        <div className="grid md:grid-cols-3 gap-4">
+          {/* Search */}
+          <div className="col-span-3 md:col-span-1">
+            <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-1">Cari Mahasiswa</label>
+            <div className="relative">
+              <input
+                type="text"
+                id="search"
+                placeholder="Cari nama, NIM, atau email..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+            </div>
+          </div>
+          
+          {/* Filter by Cohort */}
+          <div className="col-span-3 md:col-span-1">
+            <label htmlFor="cohort" className="block text-sm font-medium text-gray-700 mb-1">Filter Angkatan</label>
+            <div className="relative">
+              <select
+                id="cohort"
+                value={selectedCohort}
+                onChange={(e) => setSelectedCohort(e.target.value)}
+                className="pl-10 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none"
+              >
+                <option value="">Semua Angkatan</option>
+                {cohorts.map((cohort) => (
+                  <option key={cohort.value} value={cohort.value}>
+                    {cohort.label}
+                  </option>
+                ))}
+              </select>
+              <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+            </div>
+          </div>
+          
+          {/* Reset filters button */}
+          <div className="col-span-3 md:col-span-1 md:self-end">
+            <button
+              onClick={resetFilters}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
+            >
+              Reset Filter
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Table */}
       <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100">
         <div className="overflow-x-auto">
           <table className="w-full table-auto">
@@ -186,44 +321,126 @@ const AdminMahasiswa = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {mahasiswa.map((mhs, index) => (
-                <tr 
-                  key={index} 
-                  className="hover:bg-gray-50 transition-colors duration-150 ease-in-out"
-                >
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800">{mhs.nama}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{mhs.nim}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{mhs.email}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                    <div className="flex justify-end gap-2">
-                      <button
-                        onClick={() => handleDetail(mhs)}
-                        className="inline-flex items-center px-3 py-1.5 bg-blue-50 text-blue-700 rounded-md hover:bg-blue-100 transition-colors"
-                      >
-                        <Eye size={16} className="mr-1" />
-                        Detail
-                      </button>
-                      <button
-                        onClick={() => openDeleteConfirmation(mhs)}
-                        className="inline-flex items-center px-3 py-1.5 bg-red-50 text-red-700 rounded-md hover:bg-red-100 transition-colors"
-                      >
-                        <Trash2 size={16} className="mr-1" />
-                        Hapus
-                      </button>
+              {isLoading ? (
+                <tr>
+                  <td colSpan={4} className="px-6 py-10 text-center">
+                    <div className="flex justify-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-700"></div>
                     </div>
+                    <p className="mt-2 text-gray-500">Memuat data...</p>
                   </td>
                 </tr>
-              ))}
-              {mahasiswa.length === 0 && (
+              ) : currentItems.length > 0 ? (
+                currentItems.map((mhs, index) => (
+                  <tr 
+                    key={index} 
+                    className="hover:bg-gray-50 transition-colors duration-150 ease-in-out"
+                  >
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800">{mhs.nama}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{mhs.nim}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{mhs.email}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                      <div className="flex justify-end gap-2">
+                        <button
+                          onClick={() => handleDetail(mhs)}
+                          className="inline-flex items-center px-3 py-1.5 bg-blue-50 text-blue-700 rounded-md hover:bg-blue-100 transition-colors"
+                        >
+                          <Eye size={16} className="mr-1" />
+                          Detail
+                        </button>
+                        <button
+                          onClick={() => openDeleteConfirmation(mhs)}
+                          className="inline-flex items-center px-3 py-1.5 bg-red-50 text-red-700 rounded-md hover:bg-red-100 transition-colors"
+                        >
+                          <Trash2 size={16} className="mr-1" />
+                          Hapus
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
                 <tr>
                   <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
-                    Tidak ada data mahasiswa yang tersedia
+                    {filteredMahasiswa.length === 0 && mahasiswa.length > 0 ? 
+                      "Tidak ada data yang sesuai dengan filter" : 
+                      "Tidak ada data mahasiswa yang tersedia"}
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
+
+        {/* Pagination */}
+        {filteredMahasiswa.length > 0 && (
+          <div className="px-6 py-4 bg-gray-50 flex items-center justify-between border-t border-gray-200">
+            <div className="text-sm text-gray-700">
+              Menampilkan <span className="font-medium">{indexOfFirstItem + 1}</span> hingga{" "}
+              <span className="font-medium">
+                {indexOfLastItem > filteredMahasiswa.length ? filteredMahasiswa.length : indexOfLastItem}
+              </span>{" "}
+              dari <span className="font-medium">{filteredMahasiswa.length}</span> mahasiswa
+            </div>
+            <div className="flex gap-1">
+              <button
+                onClick={prevPage}
+                disabled={currentPage === 1}
+                className={`inline-flex items-center px-3 py-1.5 rounded-md ${
+                  currentPage === 1
+                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+                }`}
+              >
+                <ChevronLeft size={16} />
+              </button>
+              {/* Page numbers */}
+              {Array.from({ length: Math.min(5, Math.ceil(filteredMahasiswa.length / itemsPerPage)) }, (_, i) => {
+                // Logic to show pages around current page
+                const totalPages = Math.ceil(filteredMahasiswa.length / itemsPerPage);
+                let pageNum;
+                
+                if (totalPages <= 5) {
+                  pageNum = i + 1;
+                } else if (currentPage <= 3) {
+                  pageNum = i + 1;
+                } else if (currentPage >= totalPages - 2) {
+                  pageNum = totalPages - 4 + i;
+                } else {
+                  pageNum = currentPage - 2 + i;
+                }
+                
+                if (pageNum <= totalPages) {
+                  return (
+                    <button
+                      key={i}
+                      onClick={() => paginate(pageNum)}
+                      className={`inline-flex items-center justify-center w-9 h-9 rounded-md ${
+                        currentPage === pageNum
+                          ? "bg-blue-600 text-white"
+                          : "bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                }
+                return null;
+              })}
+              <button
+                onClick={nextPage}
+                disabled={currentPage === Math.ceil(filteredMahasiswa.length / itemsPerPage)}
+                className={`inline-flex items-center px-3 py-1.5 rounded-md ${
+                  currentPage === Math.ceil(filteredMahasiswa.length / itemsPerPage)
+                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+                }`}
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Modal Detail Mahasiswa */}

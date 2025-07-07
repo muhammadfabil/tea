@@ -134,26 +134,18 @@ const ProfileDosen = () => {
       );
 
       if (response.status === 200) {
-        // Extrak data dosen dari respons
-        // Berdasarkan struktur respons, data dosen ada di response.data.data
-        const updatedDosenData = response.data.data;
+        // Langsung gunakan formData sebagai update untuk state profile
+        // karena formData berisi data yang telah diperbarui user
+        setProfile({
+          ...profile,
+          name: formData.name,
+          email: formData.email,
+          nomor_induk: formData.nomor_induk,
+          keterangan: formData.keterangan,
+          status_kehadiran: formData.status_kehadiran
+        });
         
-        if (updatedDosenData) {
-          setProfile(updatedDosenData);
-          setFormData({
-            name: updatedDosenData.name || '',
-            email: updatedDosenData.email || '',
-            nomor_induk: updatedDosenData.nomor_induk || '',
-            keterangan: updatedDosenData.keterangan || '',
-            status_kehadiran: updatedDosenData.status_kehadiran !== undefined ? updatedDosenData.status_kehadiran : true
-          });
-          
-          toast.success('Profil berhasil diperbarui');
-        } else {
-          // Fallback jika tidak ada data di response.data.data
-          console.warn("Data tidak lengkap dalam respons API:", response.data);
-          toast.success('Profil berhasil diperbarui, refresh halaman untuk melihat perubahan');
-        }
+        toast.success('Profil berhasil diperbarui');
         setEditing(false);
       }
     } catch (err) {

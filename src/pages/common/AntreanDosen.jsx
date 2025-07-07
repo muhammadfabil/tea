@@ -257,7 +257,7 @@ const AntreanDosen = () => {
             variants={containerVariants}
             initial="hidden"
             animate="visible"
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6 pb-24"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6 pb-30"
           >
             {sortedDosenList.map((dosen, index) => (
               <motion.div
@@ -326,7 +326,7 @@ const AntreanDosen = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5, duration: 0.5 }}
-        className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-30"
+        className="fixed bottom-12 left-1/2 transform -translate-x-1/2 z-30"
       >
         <div className="flex items-center justify-center gap-3">
           <Link 

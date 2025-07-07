@@ -21,6 +21,7 @@ import PilihJadwal from "../pages/mahasiswa/PilihJadwal";
 
 // Layout Dosen
 import DosenLayout from "../layouts/DosenLayout";
+import RekapPresensi from "../pages/dosen/RekapPresensi"; // ← perbaikan path, tadi typo "./.pages"
 
 // Halaman Dosen
 import DashboardDosen from "../pages/dosen/DashboardDosen";
@@ -81,6 +82,7 @@ const AppRouter = () => {
   <Route element={<ProtectedRoute allowedRoles={["dosen"]} />}>
     <Route path="/dosen" element={<DosenLayout />}>
       <Route path="dashboard" element={<DashboardDosen />} />
+      <Route path="presensi" element={<RekapPresensi />} />
       <Route path="kelola-jadwal" element={<KelolaJadwal />} />
       <Route path="daftar-mahasiswa" element={<DaftarMahasiswa />} />
       <Route path="profil" element={<ProfileDosen />} /> 
