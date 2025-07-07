@@ -7,7 +7,7 @@ import {
 import { useAuth } from "../../context/AuthContext";
 
 const JadwalBimbinganMahasiswa = () => {
-  const { token } = useAuth(); // Get token directly from AuthContext
+  const { token } = useAuth();
   const [jadwalByDosen, setJadwalByDosen] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -30,6 +30,26 @@ const JadwalBimbinganMahasiswa = () => {
   const [selectedJadwal, setSelectedJadwal] = useState(null);
   const [selectedDosenInfo, setSelectedDosenInfo] = useState(null);
 
+  // Fungsi untuk mengecek apakah jadwal sudah terlewat
+  const isJadwalExpired = (tanggal, waktuSelesai) => {
+    const now = new Date();
+    const jadwalDateTime = new Date(`${tanggal}T${waktuSelesai}`);
+    return jadwalDateTime < now;
+  };
+
+  // Fungsi untuk memfilter jadwal yang belum terlewat
+  const filterActiveJadwal = (jadwalList) => {
+    return jadwalList.filter(jadwal => !isJadwalExpired(jadwal.tanggal, jadwal.waktu_selesai));
+  };
+
+  // Fungsi untuk memfilter dosen yang masih memiliki jadwal aktif
+  const filterDosenWithActiveJadwal = (dosenList) => {
+    return dosenList.map(dosen => ({
+      ...dosen,
+      jadwalList: filterActiveJadwal(dosen.jadwalList)
+    })).filter(dosen => dosen.jadwalList.length > 0);
+  };
+
   // Update the updateAntrianStatus function to also update the selectedAntrianDetail
   const updateAntrianStatus = useCallback((data) => {
     const { inisial, waktu_id, queue } = data;
@@ -43,7 +63,7 @@ const JadwalBimbinganMahasiswa = () => {
       const dosenIndex = newState.findIndex(dosen => dosen.dosenAlias === inisial);
       
       if (dosenIndex !== -1) {
-        // Find the jadwal that mat`ches the waktu_id
+        // Find the jadwal that matches the waktu_id
         const jadwalIndex = newState[dosenIndex].jadwalList.findIndex(
           jadwal => jadwal.bimbingan_id === waktu_id
         );
@@ -79,7 +99,8 @@ const JadwalBimbinganMahasiswa = () => {
         }
       }
       
-      return newState;
+      // Filter out expired jadwal after update
+      return filterDosenWithActiveJadwal(newState);
     });
   }, [selectedAntrianDetail]);
 
@@ -127,25 +148,10 @@ const JadwalBimbinganMahasiswa = () => {
                 );
 
                 if (!jadwalExists) {
-                  // Tambahkan jadwal baru jika belum ada
-                  updatedState[dosenIndex].jadwalList.push({
-                    bimbingan_id: data.waktu_id,
-                    tanggal: data.tanggal,
-                    waktu_mulai: data.waktu_mulai,
-                    waktu_selesai: data.waktu_selesai,
-                    jumlah_antrian: data.jumlah_antrian,
-                    lokasi: data.lokasi,
-                    keterangan: data.keterangan,
-                    antrian_bimbingan: [], // Initialize with an empty queue
-                  });
-                }
-              } else {
-                // Tambahkan dosen baru jika belum ada
-                updatedState.push({
-                  dosenAlias: data.inisial,
-                  dosenRole: "Dosen Pembimbing", // Default role, adjust if needed
-                  jadwalList: [
-                    {
+                  // Check if the new jadwal is not expired before adding
+                  if (!isJadwalExpired(data.tanggal, data.waktu_selesai)) {
+                    // Tambahkan jadwal baru jika belum ada dan belum expired
+                    updatedState[dosenIndex].jadwalList.push({
                       bimbingan_id: data.waktu_id,
                       tanggal: data.tanggal,
                       waktu_mulai: data.waktu_mulai,
@@ -154,12 +160,34 @@ const JadwalBimbinganMahasiswa = () => {
                       lokasi: data.lokasi,
                       keterangan: data.keterangan,
                       antrian_bimbingan: [], // Initialize with an empty queue
-                    },
-                  ],
-                });
+                    });
+                  }
+                }
+              } else {
+                // Check if the new jadwal is not expired before adding new dosen
+                if (!isJadwalExpired(data.tanggal, data.waktu_selesai)) {
+                  // Tambahkan dosen baru jika belum ada
+                  updatedState.push({
+                    dosenAlias: data.inisial,
+                    dosenRole: "Dosen Pembimbing", // Default role, adjust if needed
+                    jadwalList: [
+                      {
+                        bimbingan_id: data.waktu_id,
+                        tanggal: data.tanggal,
+                        waktu_mulai: data.waktu_mulai,
+                        waktu_selesai: data.waktu_selesai,
+                        jumlah_antrian: data.jumlah_antrian,
+                        lokasi: data.lokasi,
+                        keterangan: data.keterangan,
+                        antrian_bimbingan: [], // Initialize with an empty queue
+                      },
+                    ],
+                  });
+                }
               }
 
-              return updatedState;
+              // Filter out expired jadwal and dosen without active jadwal
+              return filterDosenWithActiveJadwal(updatedState);
             });
 
             toast.success("Jadwal baru telah ditambahkan!");
@@ -200,7 +228,7 @@ const JadwalBimbinganMahasiswa = () => {
         socketRef.current = null;
       }
     };
-  }, [nimMahasiswa, token, updateAntrianStatus]); // Tambahkan token ke dependency array
+  }, [nimMahasiswa, token, updateAntrianStatus]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -217,7 +245,7 @@ const JadwalBimbinganMahasiswa = () => {
         // Fetch relation data for the logged in student
         const relationResponse = await fetch(`${API}/relation/mahasiswa/${nim}`, {
           headers: {
-            Authorization: `Bearer ${token}`, // Use token from AuthContext
+            Authorization: `Bearer ${token}`,
           },
         });
         
@@ -237,7 +265,7 @@ const JadwalBimbinganMahasiswa = () => {
         const dosenSchedules = await Promise.all(
           relationData.map(async (relation) => {
             try {
-              const scheduleResponse = await fetch(`${API}/waktu_bimbingan/dosen/${relation.dosen_alias}`); // Updated URL
+              const scheduleResponse = await fetch(`${API}/waktu_bimbingan/dosen/${relation.dosen_alias}`);
               const scheduleData = await scheduleResponse.json();
               
               return {
@@ -257,7 +285,9 @@ const JadwalBimbinganMahasiswa = () => {
           })
         );
         
-        setJadwalByDosen(dosenSchedules);
+        // Filter jadwal yang belum terlewat
+        const filteredDosenSchedules = filterDosenWithActiveJadwal(dosenSchedules);
+        setJadwalByDosen(filteredDosenSchedules);
       } catch (err) {
         console.error("Failed to fetch data:", err);
         setError(err.message);
@@ -271,7 +301,23 @@ const JadwalBimbinganMahasiswa = () => {
     return () => {
       toast.dismiss();
     };
-  }, [token]); // Add token to dependency array to refetch when token changes
+  }, [token]);
+
+  // Tambahkan useEffect untuk auto-refresh dan filter jadwal expired setiap menit
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setJadwalByDosen(prevState => {
+        const filteredState = filterDosenWithActiveJadwal(prevState);
+        // Hanya update state jika ada perubahan
+        if (JSON.stringify(filteredState) !== JSON.stringify(prevState)) {
+          return filteredState;
+        }
+        return prevState;
+      });
+    }, 60000); // Check every minute
+
+    return () => clearInterval(interval);
+  }, []);
 
   const formatDate = (dateString) => {
     const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
