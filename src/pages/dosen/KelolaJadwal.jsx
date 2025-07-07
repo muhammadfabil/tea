@@ -21,15 +21,21 @@ import {
   Maximize,
   Minimize,
   Wifi,
-  WifiOff
+  WifiOff,
+  ChevronLeft,
+  ChevronRight,
+  CalendarDays
 } from "lucide-react";
-import { useAuth } from "../../context/AuthContext"; // Import AuthContext
+import { useAuth } from "../../context/AuthContext";
 
 const KelolaWaktuBimbingan = () => {
-  const { user, token } = useAuth(); // Ambil user dan token dari AuthContext
+  const { user, token } = useAuth();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [jadwalList, setJadwalList] = useState([]);
+  const [filteredJadwalList, setFilteredJadwalList] = useState([]);
+  const [currentWeek, setCurrentWeek] = useState(new Date());
+  const [weekRange, setWeekRange] = useState({ start: null, end: null });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -220,6 +226,64 @@ const KelolaWaktuBimbingan = () => {
     };
   }, [token]);
 
+  // Fungsi untuk menghitung range minggu
+  const getWeekRange = (date) => {
+    const startOfWeek = new Date(date);
+    const day = startOfWeek.getDay();
+    const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1); // Senin sebagai hari pertama
+    startOfWeek.setDate(diff);
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    endOfWeek.setHours(23, 59, 59, 999);
+
+    return { start: startOfWeek, end: endOfWeek };
+  };
+
+  // Fungsi untuk memfilter jadwal berdasarkan minggu
+  const filterJadwalByWeek = useCallback((jadwalData, weekStart, weekEnd) => {
+    return jadwalData.filter(jadwal => {
+      const jadwalDate = new Date(jadwal.tanggal);
+      return jadwalDate >= weekStart && jadwalDate <= weekEnd;
+    });
+  }, []);
+
+  // Fungsi untuk navigasi minggu
+  const navigateWeek = (direction) => {
+    const newWeek = new Date(currentWeek);
+    newWeek.setDate(currentWeek.getDate() + (direction * 7));
+    setCurrentWeek(newWeek);
+  };
+
+  // Fungsi untuk kembali ke minggu ini
+  const goToCurrentWeek = () => {
+    setCurrentWeek(new Date());
+  };
+
+  // Fungsi untuk format tanggal range
+  const formatWeekRange = (start, end) => {
+    const startStr = start.toLocaleDateString('id-ID', { 
+      day: 'numeric', 
+      month: 'short' 
+    });
+    const endStr = end.toLocaleDateString('id-ID', { 
+      day: 'numeric', 
+      month: 'short', 
+      year: 'numeric' 
+    });
+    return `${startStr} - ${endStr}`;
+  };
+
+  // Update week range dan filter jadwal ketika currentWeek berubah
+  useEffect(() => {
+    const range = getWeekRange(currentWeek);
+    setWeekRange(range);
+    
+    const filtered = filterJadwalByWeek(jadwalList, range.start, range.end);
+    setFilteredJadwalList(filtered);
+  }, [currentWeek, jadwalList, filterJadwalByWeek]);
+
   const fetchJadwalBimbingan = async () => {
     try {
       const response = await fetch(`${API}/waktu_bimbingan/dosen/${user?.profile?.alias}`, {
@@ -231,6 +295,11 @@ const KelolaWaktuBimbingan = () => {
       if (response.ok) {
         const data = await response.json();
         setJadwalList(data);
+        
+        // Filter untuk minggu saat ini
+        const range = getWeekRange(currentWeek);
+        const filtered = filterJadwalByWeek(data, range.start, range.end);
+        setFilteredJadwalList(filtered);
       } else {
         console.error("Gagal mengambil jadwal bimbingan:", response.statusText);
         toast.error("Gagal mengambil jadwal bimbingan.");
@@ -293,7 +362,14 @@ const KelolaWaktuBimbingan = () => {
       const result = await response.json();
       if (response.ok) {
         setMessage("Jadwal bimbingan berhasil ditambahkan!");
-        setJadwalList([...jadwalList, result]);
+        const updatedJadwalList = [...jadwalList, result];
+        setJadwalList(updatedJadwalList);
+        
+        // Update filtered list
+        const range = getWeekRange(currentWeek);
+        const filtered = filterJadwalByWeek(updatedJadwalList, range.start, range.end);
+        setFilteredJadwalList(filtered);
+        
         setFormData(initialFormData);
         toast.success("Jadwal bimbingan berhasil ditambahkan!");
         setIsModalOpen(false);
@@ -329,6 +405,12 @@ const KelolaWaktuBimbingan = () => {
           jadwal.bimbingan_id === selectedJadwal.bimbingan_id ? result : jadwal
         );
         setJadwalList(updatedList);
+        
+        // Update filtered list
+        const range = getWeekRange(currentWeek);
+        const filtered = filterJadwalByWeek(updatedList, range.start, range.end);
+        setFilteredJadwalList(filtered);
+        
         toast.success("Jadwal bimbingan berhasil diperbarui!");
         setIsModalOpen(false);
       } else {
@@ -362,6 +444,12 @@ const KelolaWaktuBimbingan = () => {
           jadwal => jadwal.bimbingan_id !== selectedJadwal.bimbingan_id
         );
         setJadwalList(updatedList);
+        
+        // Update filtered list
+        const range = getWeekRange(currentWeek);
+        const filtered = filterJadwalByWeek(updatedList, range.start, range.end);
+        setFilteredJadwalList(filtered);
+        
         toast.success("Jadwal bimbingan berhasil dihapus!");
         setIsModalOpen(false);
         setIsDetailModalOpen(false);
@@ -552,9 +640,54 @@ const KelolaWaktuBimbingan = () => {
         </div>
       </div>
 
+      {/* Week Navigation */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <CalendarDays className="text-blue-600" size={20} />
+              <h2 className="text-lg font-semibold text-gray-800">
+                {weekRange.start && weekRange.end ? formatWeekRange(weekRange.start, weekRange.end) : 'Memuat...'}
+              </h2>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => navigateWeek(-1)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                title="Minggu sebelumnya"
+              >
+                <ChevronLeft size={16} />
+              </button>
+              
+              <button
+                onClick={() => navigateWeek(1)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                title="Minggu berikutnya"
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-4 text-sm text-gray-600">
+            <span>Total: {filteredJadwalList.length} jadwal</span>
+            <div className="flex items-center gap-2">
+              <span>Antrian aktif: {filteredJadwalList.reduce((total, jadwal) => total + (jadwal.antrian_bimbingan?.length || 0), 0)}</span>
+            </div>
+            <button
+              onClick={goToCurrentWeek}
+              className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg transition-colors text-sm font-medium"
+            >
+              Lihat Jadwal Minggu Ini
+            </button>
+          </div>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {jadwalList.length > 0 ? (
-          jadwalList.map((jadwal, index) => (
+        {filteredJadwalList.length > 0 ? (
+          filteredJadwalList.map((jadwal, index) => (
             <div 
               key={index} 
               className="bg-white border border-gray-200 hover:border-blue-300 transition-colors duration-300 rounded-xl overflow-hidden shadow-sm hover:shadow-md"
@@ -643,7 +776,17 @@ const KelolaWaktuBimbingan = () => {
         ) : (
           <div className="col-span-full bg-gray-50 rounded-lg p-8 text-center">
             <Calendar className="mx-auto text-gray-400 mb-3" size={48} />
-            <p className="text-gray-500 mb-4">Belum ada jadwal bimbingan yang ditambahkan</p>
+            <p className="text-gray-500 mb-2">
+              {jadwalList.length === 0 
+                ? "Belum ada jadwal bimbingan yang ditambahkan"
+                : "Tidak ada jadwal untuk minggu ini"
+              }
+            </p>
+            {weekRange.start && weekRange.end && (
+              <p className="text-sm text-gray-400 mb-4">
+                Periode: {formatWeekRange(weekRange.start, weekRange.end)}
+              </p>
+            )}
             <button
               onClick={openAddModal}
               className="bg-blue-600 hover:bg-blue-700 transition-colors duration-300 text-white px-4 py-2 rounded-lg shadow inline-flex items-center gap-2"
