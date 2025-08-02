@@ -778,10 +778,10 @@ const handleUpdateFile = async (antrianId) => {
       {jadwalByDosen.length === 0 ? (
         <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-8 text-center">
           <div className="flex flex-col items-center justify-center">
-            <AlertCircle className="w-16 h-16 text-slate-300 mb-4" />
-            <h3 className="text-lg font-medium text-slate-700 mb-2">Belum ada relasi dosen pembimbing</h3>
+            <Calendar className="w-16 h-16 text-slate-300 mb-4" />
+            <h3 className="text-lg font-medium text-slate-700 mb-2">Belum ada jadwal bimbingan</h3>
             <p className="text-slate-500 max-w-md mx-auto">
-              Anda belum terhubung dengan dosen pembimbing. Silakan hubungi administrator untuk pengaturan relasi.
+              Belum ada jadwal bimbingan yang dibuat oleh dosen pembimbing Anda. Silakan tunggu dosen membuat jadwal bimbingan.
             </p>
           </div>
         </div>
